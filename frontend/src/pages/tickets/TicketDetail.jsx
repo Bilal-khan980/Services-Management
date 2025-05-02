@@ -26,6 +26,7 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
+import { hasPermission } from '../../utils/permissions';
 
 // Status chip colors
 const statusColors = {
@@ -232,10 +233,21 @@ const TicketDetail = () => {
     );
   }
 
-  const isStaffOrAdmin = user.role === 'staff' || user.role === 'admin' || user.role === 'enterprise_admin';
+  // Determine user permissions based on role and ownership
+  const isAdmin = user.role === 'admin' || user.role === 'enterprise_admin';
   const isEditor = user.role === 'editor';
   const isTicketOwner = ticket.user._id === user._id;
-  const canEdit = isStaffOrAdmin || isTicketOwner || isEditor;
+
+  // Admin can edit all tickets
+  // Editors can edit tickets they're assigned to and assign tickets
+  // Regular users can only edit their own tickets if they have update_own_tickets permission
+  const canEdit = isAdmin ||
+                 (isEditor && hasPermission(user, 'assign_tickets')) ||
+                 (isTicketOwner && hasPermission(user, 'update_own_tickets'));
+
+  // Only admin can change status to anything
+  // Others can only update certain fields
+  const canChangeStatus = isAdmin;
 
   return (
     <Box>
@@ -288,7 +300,7 @@ const TicketDetail = () => {
             <Typography variant="subtitle2" color="textSecondary">
               Status
             </Typography>
-            {editMode && isStaffOrAdmin ? (
+            {editMode && canChangeStatus ? (
               <TextField
                 select
                 fullWidth
@@ -392,7 +404,7 @@ const TicketDetail = () => {
             <Typography variant="subtitle2" color="textSecondary">
               Assigned To
             </Typography>
-            {editMode && isStaffOrAdmin ? (
+            {editMode && hasPermission(user, 'assign_tickets') ? (
               <TextField
                 fullWidth
                 name="assignedTo"

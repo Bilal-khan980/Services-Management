@@ -4,7 +4,7 @@
 
 /**
  * Role hierarchy and permissions
- * 
+ *
  * This defines what each role can access and the hierarchy of roles
  */
 const roleHierarchy = {
@@ -42,28 +42,8 @@ const roleHierarchy = {
       'assign_tickets'
     ]
   },
-  staff: {
-    level: 3,
-    description: 'Staff member with access to most features',
-    permissions: [
-      'view_all_tickets',
-      'create_tickets',
-      'update_tickets',
-      'view_all_changes',
-      'create_changes',
-      'update_changes',
-      'view_knowledge',
-      'create_knowledge',
-      'update_knowledge',
-      'view_solutions',
-      'create_solutions',
-      'update_solutions',
-      'comment_on_knowledge',
-      'assign_tickets'
-    ]
-  },
   admin: {
-    level: 4,
+    level: 3,
     description: 'Administrator with access to all features except enterprise admin features',
     permissions: [
       'view_all_tickets',
@@ -85,11 +65,12 @@ const roleHierarchy = {
       'comment_on_knowledge',
       'assign_tickets',
       'manage_users',
-      'manage_settings'
+      'manage_settings',
+      'reset_user_passwords'
     ]
   },
   enterprise_admin: {
-    level: 5,
+    level: 4,
     description: 'Enterprise Administrator with full access to all features',
     permissions: [
       'view_all_tickets',

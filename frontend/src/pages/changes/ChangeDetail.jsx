@@ -34,6 +34,7 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
+import { hasPermission } from '../../utils/permissions';
 
 // Status chip colors
 const statusColors = {
@@ -371,11 +372,13 @@ const ChangeDetail = () => {
     );
   }
 
-  const isStaffOrAdmin = user.role === 'staff' || user.role === 'admin' || user.role === 'enterprise_admin';
+  const isAdmin = user.role === 'admin' || user.role === 'enterprise_admin';
   const isEditor = user.role === 'editor';
   const isChangeOwner = change.user._id.toString() === user._id;
-  const canEdit = isStaffOrAdmin || isChangeOwner || isEditor;
-  const canReview = (isStaffOrAdmin || isEditor) && !isChangeOwner;
+  const canEdit = isAdmin ||
+                 (isEditor && hasPermission(user, 'update_knowledge')) ||
+                 (isChangeOwner && hasPermission(user, 'update_own_changes'));
+  const canReview = (isAdmin || isEditor) && !isChangeOwner;
 
   // Check if user has already reviewed
   const hasReviewed = change.reviewers?.some(reviewer => reviewer.user._id.toString() === user._id);
@@ -432,7 +435,7 @@ const ChangeDetail = () => {
               <Typography variant="subtitle2" color="textSecondary">
                 Status
               </Typography>
-              {editMode && isStaffOrAdmin ? (
+              {editMode && isAdmin ? (
                 <TextField
                   select
                   fullWidth

@@ -45,38 +45,50 @@ const Sidebar = ({ drawerWidth, mobileOpen, handleDrawerToggle, isMobile }) => {
     return location.pathname.startsWith(path);
   };
 
-  const menuItems = [
+  // Define all possible menu items with their required permissions
+  const allMenuItems = [
     {
       text: 'Dashboard',
       icon: <DashboardIcon />,
       path: '/dashboard',
       exact: true,
+      // Dashboard is accessible to all authenticated users
+      requiredPermission: null
     },
     {
       text: 'Tickets',
       icon: <TicketIcon />,
       path: '/dashboard/tickets',
+      // All users can view their own tickets
+      requiredPermission: 'view_own_tickets'
     },
     {
       text: 'Changes',
       icon: <ChangeIcon />,
       path: '/dashboard/changes',
+      // All users can view their own changes
+      requiredPermission: 'view_own_changes'
     },
     {
       text: 'Knowledge Base',
       icon: <KnowledgeIcon />,
       path: '/dashboard/knowledge',
+      // All users can view knowledge base
+      requiredPermission: 'view_knowledge'
     },
-  ];
-
-  // Add Solutions menu item for users with view_solutions permission
-  if (hasPermission(user, 'view_solutions')) {
-    menuItems.push({
+    {
       text: 'Solutions',
       icon: <SolutionIcon />,
       path: '/dashboard/solutions',
-    });
-  }
+      // Only users with view_solutions permission can see this
+      requiredPermission: 'view_solutions'
+    },
+  ];
+
+  // Filter menu items based on user permissions
+  const menuItems = allMenuItems.filter(item =>
+    item.requiredPermission === null || hasPermission(user, item.requiredPermission)
+  );
 
   const drawer = (
     <div>

@@ -7,6 +7,18 @@ const Knowledge = require('../models/Knowledge');
 // @route     GET /api/knowledge
 // @access    Private
 exports.getKnowledgeArticles = asyncHandler(async (req, res, next) => {
+  // Filter articles based on user role and status parameter
+  if (req.user.role !== 'admin' && req.user.role !== 'enterprise_admin' && req.user.role !== 'editor') {
+    // Regular users can only see published articles
+    if (!req.query.status) {
+      req.query.status = 'published';
+    }
+  }
+
+  // Log the query for debugging
+  console.log('Knowledge query:', req.query);
+  console.log('User role:', req.user.role);
+
   res.status(200).json(res.advancedResults);
 });
 
@@ -33,12 +45,13 @@ exports.getKnowledgeArticle = asyncHandler(async (req, res, next) => {
       );
     }
 
-    // Check if article is private and user is not author or admin/staff
+    // Check if article is private and user is not author or admin/editor
     if (
       article.visibility === 'private' &&
       article.author._id.toString() !== req.user.id &&
       req.user.role !== 'admin' &&
-      req.user.role !== 'staff'
+      req.user.role !== 'enterprise_admin' &&
+      req.user.role !== 'editor'
     ) {
       return next(
         new ErrorResponse(
@@ -48,11 +61,12 @@ exports.getKnowledgeArticle = asyncHandler(async (req, res, next) => {
       );
     }
 
-    // Check if article is internal and user is not staff/admin
+    // Check if article is internal and user is not admin/editor
     if (
       article.visibility === 'internal' &&
       req.user.role !== 'admin' &&
-      req.user.role !== 'staff'
+      req.user.role !== 'enterprise_admin' &&
+      req.user.role !== 'editor'
     ) {
       return next(
         new ErrorResponse(
@@ -304,7 +318,7 @@ exports.getSuggestedArticles = asyncHandler(async (req, res, next) => {
       status: 'published',
       $or: [
         { visibility: 'public' },
-        ...(req.user.role === 'admin' || req.user.role === 'staff'
+        ...(req.user.role === 'admin' || req.user.role === 'enterprise_admin' || req.user.role === 'editor'
           ? [{ visibility: 'internal' }]
           : []),
         { visibility: 'private', author: req.user.id }

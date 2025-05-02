@@ -36,6 +36,19 @@ export const AuthProvider = ({ children }) => {
     initializeAuth();
   }, []);
 
+  // Internal logout function to avoid circular dependency
+  const internalLogout = useCallback(() => {
+    // Remove from localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('token');
+    }
+
+    // Clear state and axios headers
+    setToken(null);
+    setUser(null);
+    delete api.defaults.headers.common['Authorization'];
+  }, []);
+
   // Load user data
   const loadUser = useCallback(async () => {
     try {
@@ -52,18 +65,31 @@ export const AuthProvider = ({ children }) => {
 
       const res = await api.get('/auth/me');
       console.log('User data loaded:', res.data.data);
-      setUser(res.data.data);
+
+      // Validate user data before setting it
+      if (res.data.data && res.data.data.role) {
+        setUser(res.data.data);
+      } else {
+        console.error('Invalid user data received:', res.data);
+        // If user data is invalid, log out using internal function
+        internalLogout();
+        return;
+      }
+
       setLoading(false);
     } catch (error) {
       console.error('Error loading user:', error);
       // Only logout if it's an authentication error
       if (error.response && error.response.status === 401) {
         console.log('Authentication error, logging out');
-        logout();
+        internalLogout();
+      } else {
+        // For other errors, just set loading to false but don't set user
+        setUser(null);
       }
       setLoading(false);
     }
-  }, [token]);
+  }, [token, internalLogout]);
 
   // Register user
   const register = async (userData) => {
@@ -131,19 +157,12 @@ export const AuthProvider = ({ children }) => {
 
   // Logout user
   const logout = useCallback(() => {
-    // Remove from localStorage
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('token');
-    }
-
-    // Clear state and axios headers
-    setToken(null);
-    setUser(null);
-    delete api.defaults.headers.common['Authorization'];
+    // Use the internal logout function
+    internalLogout();
 
     // Redirect to login
     navigate('/login');
-  }, [navigate]);
+  }, [navigate, internalLogout]);
 
   // Update user profile
   const updateProfile = async (userData) => {

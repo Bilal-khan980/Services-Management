@@ -277,42 +277,43 @@ const Dashboard = () => {
           </Card>
         </Grid>
 
-        {/* Solutions Card */}
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  mb: 2,
-                }}
-              >
-                <SolutionIcon color="success" sx={{ fontSize: 40, mr: 2 }} />
-                <Typography variant="h5">Solutions</Typography>
-              </Box>
-              <Typography variant="h3" component="div">
-                {stats.solutions.total}
-              </Typography>
-              <Box sx={{ mt: 2 }}>
-                <Typography variant="body2" color="text.secondary">
-                  Internal solutions for staff
+        {/* Solutions Card - Only show to users with view_solutions permission */}
+        {hasPermission(user, 'view_solutions') && (
+          <Grid item xs={12} sm={6} md={3}>
+            <Card>
+              <CardContent>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    mb: 2,
+                  }}
+                >
+                  <SolutionIcon color="success" sx={{ fontSize: 40, mr: 2 }} />
+                  <Typography variant="h5">Solutions</Typography>
+                </Box>
+                <Typography variant="h3" component="div">
+                  {stats.solutions.total}
                 </Typography>
-              </Box>
-              <Button
-                component={RouterLink}
-                to="/dashboard/solutions"
-                variant="outlined"
-                size="small"
-                sx={{ mt: 2 }}
-                fullWidth
-                disabled={!hasPermission(user, 'view_solutions')}
-              >
-                View All
-              </Button>
-            </CardContent>
-          </Card>
-        </Grid>
+                <Box sx={{ mt: 2 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Internal solutions for staff
+                  </Typography>
+                </Box>
+                <Button
+                  component={RouterLink}
+                  to="/dashboard/solutions"
+                  variant="outlined"
+                  size="small"
+                  sx={{ mt: 2 }}
+                  fullWidth
+                >
+                  View All
+                </Button>
+              </CardContent>
+            </Card>
+          </Grid>
+        )}
 
         {/* Quick Actions */}
         <Grid item xs={12} md={6}>
@@ -322,30 +323,39 @@ const Dashboard = () => {
             </Typography>
             <Divider sx={{ mb: 2 }} />
             <Grid container spacing={2}>
-              <Grid item xs={12} sm={6}>
-                <Button
-                  component={RouterLink}
-                  to="/dashboard/tickets/create"
-                  variant="contained"
-                  color="primary"
-                  fullWidth
-                  startIcon={<TicketIcon />}
-                >
-                  Create Ticket
-                </Button>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Button
-                  component={RouterLink}
-                  to="/dashboard/changes/create"
-                  variant="contained"
-                  color="secondary"
-                  fullWidth
-                  startIcon={<ChangeIcon />}
-                >
-                  Submit Change
-                </Button>
-              </Grid>
+              {/* Only show Create Ticket button if user has create_tickets permission */}
+              {hasPermission(user, 'create_tickets') && (
+                <Grid item xs={12} sm={6}>
+                  <Button
+                    component={RouterLink}
+                    to="/dashboard/tickets/create"
+                    variant="contained"
+                    color="primary"
+                    fullWidth
+                    startIcon={<TicketIcon />}
+                  >
+                    Create Ticket
+                  </Button>
+                </Grid>
+              )}
+
+              {/* Only show Submit Change button if user has create_changes permission */}
+              {hasPermission(user, 'create_changes') && (
+                <Grid item xs={12} sm={6}>
+                  <Button
+                    component={RouterLink}
+                    to="/dashboard/changes/create"
+                    variant="contained"
+                    color="secondary"
+                    fullWidth
+                    startIcon={<ChangeIcon />}
+                  >
+                    Submit Change
+                  </Button>
+                </Grid>
+              )}
+
+              {/* Only show Create Article button if user has create_knowledge permission */}
               {hasPermission(user, 'create_knowledge') && (
                 <Grid item xs={12} sm={6}>
                   <Button
@@ -360,6 +370,8 @@ const Dashboard = () => {
                   </Button>
                 </Grid>
               )}
+
+              {/* Only show Create Solution button if user has create_solutions permission */}
               {hasPermission(user, 'create_solutions') && (
                 <Grid item xs={12} sm={6}>
                   <Button

@@ -27,6 +27,7 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
+import { hasPermission } from '../../utils/permissions';
 
 // Status chip colors
 const statusColors = {
@@ -56,30 +57,89 @@ const KnowledgeList = () => {
   const fetchArticles = async (page = 1, limit = 9) => {
     try {
       setLoading(true);
-      
+
       let url = `/knowledge?page=${page}&limit=${limit}`;
-      
-      // If user is not staff/admin, only show published articles
-      if (user.role !== 'admin' && user.role !== 'staff') {
+
+      // For regular users, only show published articles
+      // For admin, enterprise_admin, and editors, show all articles
+      // Safely check user role
+      if (!user || !user.role ||
+          (user.role !== 'admin' && user.role !== 'enterprise_admin' && user.role !== 'editor')) {
         url += '&status=published';
       }
-      
-      const res = await api.get(url);
-      
-      setArticles(res.data.data);
+
+      console.log('Fetching knowledge articles with URL:', url);
+      console.log('Current user role:', user?.role || 'unknown');
+
+      // Add a timeout to the request to prevent hanging
+      const res = await Promise.race([
+        api.get(url),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Request timeout')), 10000)
+        )
+      ]);
+
+      console.log('API response:', res.data);
+
+      if (!res.data || res.data.success === false) {
+        throw new Error(res.data?.error || 'Failed to fetch articles');
+      }
+
+      // Make sure we have an array of articles
+      const articlesData = Array.isArray(res.data.data) ? res.data.data : [];
+
+      setArticles(articlesData);
       setTotalPages(Math.ceil(res.data.pagination?.total / limit) || 1);
       setError('');
     } catch (err) {
-      setError('Failed to fetch knowledge articles');
-      console.error(err);
+      console.error('Error fetching knowledge articles:', err);
+      setError(`Failed to fetch knowledge articles: ${err.message || 'Unknown error'}`);
+      setArticles([]);
     } finally {
       setLoading(false);
     }
   };
 
+  // Check if the backend server is running
+  const checkServerStatus = async () => {
+    try {
+      // Use the correct health check endpoint with full path
+      const res = await api.get('/api/health');
+      console.log('Server status:', res.data);
+      return true;
+    } catch (err) {
+      console.error('Error checking server status:', err);
+      // Don't set error here, just return false and we'll handle it in the useEffect
+      return false;
+    }
+  };
+
   useEffect(() => {
-    fetchArticles(page);
-  }, [page, user.role]);
+    const initializeComponent = async () => {
+      try {
+        setLoading(true);
+        const serverRunning = await checkServerStatus();
+
+        if (serverRunning) {
+          await fetchArticles(page);
+        } else {
+          setError('Cannot connect to the backend server. Please make sure it is running.');
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error('Error in initialization:', err);
+        setError(`An error occurred: ${err.message || 'Unknown error'}`);
+        setLoading(false);
+      }
+    };
+
+    // Only initialize if user is available
+    if (user) {
+      initializeComponent();
+    } else {
+      setLoading(false);
+    }
+  }, [page, user]); // Only depend on user, not user.role
 
   const handlePageChange = (event, value) => {
     setPage(value);
@@ -90,14 +150,14 @@ const KnowledgeList = () => {
       setSearchResults([]);
       return;
     }
-    
+
     try {
       setSearching(true);
-      
+
       // In a real app, you would have a search endpoint
       // For now, we'll simulate it by filtering articles
       const res = await api.get(`/knowledge/suggest?keywords=${searchQuery}`);
-      
+
       setSearchResults(res.data.data);
     } catch (err) {
       console.error(err);
@@ -126,13 +186,54 @@ const KnowledgeList = () => {
     });
   };
 
-  const isStaffOrAdmin = user.role === 'staff' || user.role === 'admin';
+  // Only check permissions if user object is valid
+  const canCreateKnowledge = user && user.role ? hasPermission(user, 'create_knowledge') : false;
+
+  // If we're still loading the user data, show a loading indicator
+  if (loading && !user) {
+    return (
+      <Box>
+        <Typography variant="h4" gutterBottom>Knowledge Base</Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
+          <CircularProgress />
+          <Typography variant="body1" sx={{ ml: 2 }}>
+            Loading user data...
+          </Typography>
+        </Box>
+      </Box>
+    );
+  }
+
+  // If there's an error with the user object, render a fallback UI
+  if (!user || !user.role) {
+    return (
+      <Box>
+        <Typography variant="h4" gutterBottom>Knowledge Base</Typography>
+        <Paper sx={{ p: 4, mt: 2 }}>
+          <Typography variant="h6" color="error" gutterBottom>
+            Error loading user data
+          </Typography>
+          <Typography variant="body1">
+            There was a problem loading your user information. Please try refreshing the page or logging in again.
+          </Typography>
+          <Button
+            variant="contained"
+            color="primary"
+            sx={{ mt: 2 }}
+            onClick={() => window.location.reload()}
+          >
+            Refresh Page
+          </Button>
+        </Paper>
+      </Box>
+    );
+  }
 
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h4">Knowledge Base</Typography>
-        {isStaffOrAdmin && (
+        {canCreateKnowledge && (
           <Button
             component={RouterLink}
             to="/dashboard/knowledge/create"
@@ -174,6 +275,15 @@ const KnowledgeList = () => {
       {error && (
         <Alert severity="error" sx={{ mb: 3 }}>
           {error}
+          <Typography variant="body2" sx={{ mt: 1 }}>
+            If you're seeing this error, it might be because:
+            <ul>
+              <li>The backend server is not running</li>
+              <li>There are no knowledge articles in the database</li>
+              <li>You don't have permission to view knowledge articles</li>
+            </ul>
+            Try refreshing the page or contact your administrator.
+          </Typography>
         </Alert>
       )}
 
@@ -254,7 +364,15 @@ const KnowledgeList = () => {
           <Typography variant="h6" color="textSecondary" gutterBottom>
             No knowledge articles found
           </Typography>
-          {isStaffOrAdmin && (
+          <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+            This could be because:
+            <ul style={{ textAlign: 'left', display: 'inline-block', marginTop: '8px' }}>
+              <li>No articles have been created yet</li>
+              <li>Articles exist but are not published (if you're a regular user)</li>
+              <li>You don't have permission to view the existing articles</li>
+            </ul>
+          </Typography>
+          {canCreateKnowledge && (
             <Button
               component={RouterLink}
               to="/dashboard/knowledge/create"
@@ -281,7 +399,7 @@ const KnowledgeList = () => {
                         variant="outlined"
                       />
                       <Box>
-                        {isStaffOrAdmin && (
+                        {canCreateKnowledge && (
                           <Chip
                             size="small"
                             label={article.status.charAt(0).toUpperCase() + article.status.slice(1)}

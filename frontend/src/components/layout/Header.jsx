@@ -24,6 +24,7 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import NotificationCenter from '../notifications/NotificationCenter';
+import { hasPermission } from '../../utils/permissions';
 
 const Header = ({ drawerWidth, handleDrawerToggle }) => {
   const { user, logout } = useAuth();
@@ -147,6 +148,17 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
             </ListItemIcon>
             Profile
           </MenuItem>
+
+          {/* Only show Settings option if user has manage_settings permission */}
+          {hasPermission(user, 'manage_settings') && (
+            <MenuItem component={RouterLink} to="/dashboard/admin/settings">
+              <ListItemIcon>
+                <SettingsIcon fontSize="small" />
+              </ListItemIcon>
+              Settings
+            </MenuItem>
+          )}
+
           <Divider />
           <MenuItem onClick={handleLogout}>
             <ListItemIcon>

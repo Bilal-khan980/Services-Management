@@ -1,23 +1,27 @@
 const advancedResults = (model, populate) => async (req, res, next) => {
-  let query;
+  try {
+    let query;
 
-  // Copy req.query
-  const reqQuery = { ...req.query };
+    // Copy req.query
+    const reqQuery = { ...req.query };
 
-  // Fields to exclude
-  const removeFields = ['select', 'sort', 'page', 'limit'];
+    // Fields to exclude
+    const removeFields = ['select', 'sort', 'page', 'limit'];
 
-  // Loop over removeFields and delete them from reqQuery
-  removeFields.forEach(param => delete reqQuery[param]);
+    // Loop over removeFields and delete them from reqQuery
+    removeFields.forEach(param => delete reqQuery[param]);
 
-  // Create query string
-  let queryStr = JSON.stringify(reqQuery);
+    // Create query string
+    let queryStr = JSON.stringify(reqQuery);
 
-  // Create operators ($gt, $gte, etc)
-  queryStr = queryStr.replace(/\b(gt|gte|lt|lte|in)\b/g, match => `$${match}`);
+    // Create operators ($gt, $gte, etc)
+    queryStr = queryStr.replace(/\b(gt|gte|lt|lte|in)\b/g, match => `$${match}`);
 
-  // Finding resource
-  query = model.find(JSON.parse(queryStr));
+    // Log the query for debugging
+    console.log(`Advanced Results Query for ${model.modelName}:`, JSON.parse(queryStr));
+
+    // Finding resource
+    query = model.find(JSON.parse(queryStr));
 
   // Select Fields
   if (req.query.select) {
@@ -49,6 +53,9 @@ const advancedResults = (model, populate) => async (req, res, next) => {
   // Executing query
   const results = await query;
 
+  // Log the results for debugging
+  console.log(`Found ${results.length} results for ${model.modelName}`);
+
   // Pagination result
   const pagination = {};
 
@@ -74,6 +81,14 @@ const advancedResults = (model, populate) => async (req, res, next) => {
   };
 
   next();
+  } catch (error) {
+    console.error(`Error in advancedResults middleware for ${model.modelName}:`, error);
+    res.status(500).json({
+      success: false,
+      error: 'Server Error',
+      details: error.message
+    });
+  }
 };
 
 module.exports = advancedResults;

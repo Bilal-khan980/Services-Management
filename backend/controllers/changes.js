@@ -9,8 +9,8 @@ const { createNotificationHelper } = require('./notifications');
 // @route     GET /api/changes
 // @access    Private
 exports.getChanges = asyncHandler(async (req, res, next) => {
-  // If user is not admin, staff, editor, or enterprise_admin, only show their changes
-  if (req.user.role !== 'admin' && req.user.role !== 'staff' && req.user.role !== 'editor' && req.user.role !== 'enterprise_admin') {
+  // If user is not admin, editor, or enterprise_admin, only show their changes
+  if (req.user.role !== 'admin' && req.user.role !== 'editor' && req.user.role !== 'enterprise_admin') {
     req.query.user = req.user.id;
   }
 

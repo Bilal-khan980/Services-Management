@@ -89,6 +89,15 @@ app.use(cors());
 // Set static folder
 app.use(express.static('public'));
 
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'Server is running',
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Mount routers
 app.use('/api/auth', auth);
 app.use('/api/users', users);

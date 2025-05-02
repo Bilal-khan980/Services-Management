@@ -1,12 +1,15 @@
 import { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { CssBaseline } from '@mui/material';
+import { CssBaseline, Box, Typography, Button, CircularProgress } from '@mui/material';
 import { useAuth } from './contexts/AuthContext';
 import { useTheme } from './contexts/ThemeContext';
 
 // Layouts
 import MainLayout from './layouts/MainLayout';
 import AuthLayout from './layouts/AuthLayout';
+
+// Common Components
+import ErrorBoundary from './components/common/ErrorBoundary';
 
 // Pages
 import Dashboard from './pages/Dashboard';
@@ -51,12 +54,41 @@ import PermissionGuard from './components/common/PermissionGuard';
 const ProtectedRoute = ({ children, allowedRoles = [], requiredPermission = null }) => {
   const { isAuthenticated, user, loading } = useAuth();
 
+  // Show a better loading indicator
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <CircularProgress />
+        <Typography variant="body1" sx={{ ml: 2 }}>
+          Loading...
+        </Typography>
+      </Box>
+    );
   }
 
   if (!isAuthenticated) {
     return <Navigate to="/login" />;
+  }
+
+  // Make sure user data is loaded
+  if (!user || !user.role) {
+    return (
+      <Box sx={{ p: 4, maxWidth: '600px', mx: 'auto', mt: 4 }}>
+        <Typography variant="h5" color="error" gutterBottom>
+          Error loading user data
+        </Typography>
+        <Typography variant="body1" paragraph>
+          There was a problem loading your user information. Please try refreshing the page or logging in again.
+        </Typography>
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={() => window.location.reload()}
+        >
+          Refresh Page
+        </Button>
+      </Box>
+    );
   }
 
   // Check for role-based access
@@ -142,22 +174,32 @@ function App() {
           <Route path="changes/:id" element={<ChangeDetail />} />
 
           {/* Knowledge Routes */}
-          <Route path="knowledge" element={<KnowledgeList />} />
+          <Route path="knowledge" element={
+            <ErrorBoundary>
+              <KnowledgeList />
+            </ErrorBoundary>
+          } />
           <Route
             path="knowledge/create"
             element={
-              <ProtectedRoute allowedRoles={['editor', 'staff', 'admin', 'enterprise_admin']}>
-                <KnowledgeCreate />
+              <ProtectedRoute allowedRoles={['editor', 'admin', 'enterprise_admin']}>
+                <ErrorBoundary>
+                  <KnowledgeCreate />
+                </ErrorBoundary>
               </ProtectedRoute>
             }
           />
-          <Route path="knowledge/:id" element={<KnowledgeDetail />} />
+          <Route path="knowledge/:id" element={
+            <ErrorBoundary>
+              <KnowledgeDetail />
+            </ErrorBoundary>
+          } />
 
           {/* Solution Routes */}
           <Route
             path="solutions"
             element={
-              <ProtectedRoute allowedRoles={['editor', 'staff', 'admin', 'enterprise_admin']}>
+              <ProtectedRoute allowedRoles={['editor', 'admin', 'enterprise_admin']}>
                 <SolutionList />
               </ProtectedRoute>
             }
@@ -165,7 +207,7 @@ function App() {
           <Route
             path="solutions/create"
             element={
-              <ProtectedRoute allowedRoles={['editor', 'staff', 'admin', 'enterprise_admin']}>
+              <ProtectedRoute allowedRoles={['editor', 'admin', 'enterprise_admin']}>
                 <SolutionCreate />
               </ProtectedRoute>
             }
@@ -173,7 +215,7 @@ function App() {
           <Route
             path="solutions/:id"
             element={
-              <ProtectedRoute allowedRoles={['editor', 'staff', 'admin', 'enterprise_admin']}>
+              <ProtectedRoute allowedRoles={['editor', 'admin', 'enterprise_admin']}>
                 <SolutionDetail />
               </ProtectedRoute>
             }

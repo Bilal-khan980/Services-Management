@@ -29,6 +29,7 @@ import {
 import ReactMarkdown from 'react-markdown';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
+import { hasPermission } from '../../utils/permissions';
 
 // Status chip colors
 const statusColors = {
@@ -48,19 +49,19 @@ const KnowledgeDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  
+
   const [article, setArticle] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [commentText, setCommentText] = useState('');
   const [addingComment, setAddingComment] = useState(false);
   const [voting, setVoting] = useState(false);
-  
+
   const fetchArticle = async () => {
     try {
       setLoading(true);
       const res = await api.get(`/knowledge/${id}`);
-      
+
       if (res.data.success) {
         setArticle(res.data.data);
       }
@@ -82,10 +83,10 @@ const KnowledgeDetail = () => {
 
   const handleAddComment = async () => {
     if (!commentText.trim()) return;
-    
+
     try {
       setAddingComment(true);
-      
+
       // In a real app, you would have an API endpoint for adding comments
       // For now, we'll simulate it by updating the article with a new comment
       const updatedComments = [
@@ -100,11 +101,11 @@ const KnowledgeDetail = () => {
           createdAt: new Date().toISOString(),
         },
       ];
-      
+
       const res = await api.put(`/knowledge/${id}`, {
         comments: updatedComments,
       });
-      
+
       if (res.data.success) {
         setArticle(res.data.data);
         setCommentText('');
@@ -120,11 +121,11 @@ const KnowledgeDetail = () => {
   const handleVote = async (voteType) => {
     try {
       setVoting(true);
-      
+
       const res = await api.put(`/knowledge/${id}/vote`, {
         vote: voteType,
       });
-      
+
       if (res.data.success) {
         setArticle(res.data.data);
       }
@@ -184,10 +185,11 @@ const KnowledgeDetail = () => {
     );
   }
 
-  const isStaffOrAdmin = user.role === 'staff' || user.role === 'admin';
+  const isAdmin = user.role === 'admin' || user.role === 'enterprise_admin';
+  const isEditor = user.role === 'editor';
   const isAuthor = article.author._id === user._id;
-  const canEdit = isStaffOrAdmin || isAuthor;
-  
+  const canEdit = isAdmin || isEditor || (isAuthor && hasPermission(user, 'update_knowledge'));
+
   // Check if user has already voted
   const userVote = article.votes?.voters?.find(voter => voter.user === user._id)?.vote;
 
@@ -217,7 +219,7 @@ const KnowledgeDetail = () => {
                 </Button>
               )}
             </Box>
-            
+
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 3 }}>
               <Chip
                 label={article.category.charAt(0).toUpperCase() + article.category.slice(1)}
@@ -238,7 +240,7 @@ const KnowledgeDetail = () => {
                 <Chip key={tag} label={tag} size="small" />
               ))}
             </Box>
-            
+
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
                 <Avatar sx={{ mr: 1 }}>
@@ -253,7 +255,7 @@ const KnowledgeDetail = () => {
                   </Typography>
                 </Box>
               </Box>
-              
+
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
                 <IconButton
                   color={userVote === 'up' ? 'primary' : 'default'}
@@ -277,9 +279,9 @@ const KnowledgeDetail = () => {
                 </Typography>
               </Box>
             </Box>
-            
+
             <Divider sx={{ mb: 3 }} />
-            
+
             <Box sx={{ mb: 4 }}>
               <ReactMarkdown>{article.content}</ReactMarkdown>
             </Box>
@@ -312,7 +314,7 @@ const KnowledgeDetail = () => {
             )}
 
             <Divider sx={{ my: 3 }} />
-            
+
             <Typography variant="h6" gutterBottom>
               Comments
             </Typography>
