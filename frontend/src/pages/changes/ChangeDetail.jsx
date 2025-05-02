@@ -371,10 +371,11 @@ const ChangeDetail = () => {
     );
   }
 
-  const isStaffOrAdmin = user.role === 'staff' || user.role === 'admin';
+  const isStaffOrAdmin = user.role === 'staff' || user.role === 'admin' || user.role === 'enterprise_admin';
+  const isEditor = user.role === 'editor';
   const isChangeOwner = change.user._id.toString() === user._id;
-  const canEdit = isStaffOrAdmin || isChangeOwner;
-  const canReview = isStaffOrAdmin && !isChangeOwner;
+  const canEdit = isStaffOrAdmin || isChangeOwner || isEditor;
+  const canReview = (isStaffOrAdmin || isEditor) && !isChangeOwner;
 
   // Check if user has already reviewed
   const hasReviewed = change.reviewers?.some(reviewer => reviewer.user._id.toString() === user._id);

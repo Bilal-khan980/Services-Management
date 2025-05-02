@@ -19,14 +19,14 @@ import api from '../../services/api';
 
 const UserCreate = () => {
   const navigate = useNavigate();
-  
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
     role: 'user',
   });
-  
+
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -37,7 +37,7 @@ const UserCreate = () => {
       ...formData,
       [e.target.name]: e.target.value,
     });
-    
+
     // Clear field-specific error when user types
     if (errors[e.target.name]) {
       setErrors({
@@ -53,41 +53,41 @@ const UserCreate = () => {
 
   const validateForm = () => {
     const newErrors = {};
-    
+
     // Validate name
     if (!formData.name.trim()) {
       newErrors.name = 'Name is required';
     }
-    
+
     // Validate email
     if (!formData.email) {
       newErrors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'Email is invalid';
     }
-    
+
     // Validate password
     if (!formData.password) {
       newErrors.password = 'Password is required';
     } else if (formData.password.length < 6) {
       newErrors.password = 'Password must be at least 6 characters';
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
-    
+
     try {
       setLoading(true);
       const res = await api.post('/users', formData);
-      
+
       if (res.data.success) {
         navigate('/dashboard/admin/users');
       }
@@ -133,7 +133,7 @@ const UserCreate = () => {
                 helperText={errors.name}
               />
             </Grid>
-            
+
             <Grid item xs={12}>
               <TextField
                 required
@@ -147,7 +147,7 @@ const UserCreate = () => {
                 helperText={errors.email}
               />
             </Grid>
-            
+
             <Grid item xs={12}>
               <TextField
                 required
@@ -174,7 +174,7 @@ const UserCreate = () => {
                 }}
               />
             </Grid>
-            
+
             <Grid item xs={12}>
               <TextField
                 select
@@ -186,11 +186,16 @@ const UserCreate = () => {
                 onChange={handleChange}
               >
                 <MenuItem value="user">User</MenuItem>
+                <MenuItem value="editor">Editor/Knowledge Manager</MenuItem>
                 <MenuItem value="staff">Staff</MenuItem>
                 <MenuItem value="admin">Admin</MenuItem>
+                {/* Only enterprise_admin can create another enterprise_admin */}
+                {useAuth().user?.role === 'enterprise_admin' && (
+                  <MenuItem value="enterprise_admin">Enterprise Admin</MenuItem>
+                )}
               </TextField>
             </Grid>
-            
+
             <Grid item xs={12}>
               <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
                 <Button

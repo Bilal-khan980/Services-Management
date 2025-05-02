@@ -37,8 +37,10 @@ import api from '../../services/api';
 // Role chip colors
 const roleColors = {
   user: 'primary',
+  editor: 'info',
   staff: 'secondary',
   admin: 'error',
+  enterprise_admin: 'warning',
 };
 
 const UserList = () => {
@@ -50,7 +52,7 @@ const UserList = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [totalCount, setTotalCount] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
-  
+
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
@@ -58,15 +60,15 @@ const UserList = () => {
   const fetchUsers = async (page = 0, limit = 10, search = '') => {
     try {
       setLoading(true);
-      
+
       let url = `/users?page=${page + 1}&limit=${limit}`;
-      
+
       if (search) {
         url += `&name[regex]=${search}&name[options]=i`;
       }
-      
+
       const res = await api.get(url);
-      
+
       setUsers(res.data.data);
       setTotalCount(res.data.pagination?.total || res.data.count);
       setError('');
@@ -113,14 +115,14 @@ const UserList = () => {
 
   const handleDeleteConfirm = async () => {
     if (!userToDelete) return;
-    
+
     try {
       setDeleting(true);
       await api.delete(`/users/${userToDelete._id}`);
-      
+
       // Refresh the user list
       fetchUsers(page, rowsPerPage, searchQuery);
-      
+
       setDeleteDialogOpen(false);
       setUserToDelete(null);
     } catch (err) {
@@ -273,9 +275,9 @@ const UserList = () => {
           <Button onClick={handleDeleteCancel} disabled={deleting}>
             Cancel
           </Button>
-          <Button 
-            onClick={handleDeleteConfirm} 
-            color="error" 
+          <Button
+            onClick={handleDeleteConfirm}
+            color="error"
             disabled={deleting}
             startIcon={deleting ? <CircularProgress size={20} /> : null}
           >

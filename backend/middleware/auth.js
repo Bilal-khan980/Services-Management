@@ -53,6 +53,16 @@ exports.protect = asyncHandler(async (req, res, next) => {
 // Grant access to specific roles
 exports.authorize = (...roles) => {
   return (req, res, next) => {
+    // Enterprise admin has access to everything
+    if (req.user.role === 'enterprise_admin') {
+      return next();
+    }
+
+    // Admin has access to everything except enterprise admin routes
+    if (req.user.role === 'admin' && !roles.includes('enterprise_admin')) {
+      return next();
+    }
+
     if (!roles.includes(req.user.role)) {
       return next(
         new ErrorResponse(

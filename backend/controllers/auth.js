@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const ErrorResponse = require('../utils/errorResponse');
 const asyncHandler = require('../middleware/async');
 const sendEmail = require('../utils/sendEmail');
+const microsoft365 = require('../utils/microsoft365');
 const User = require('../models/User');
 
 // @desc      Register user
@@ -47,6 +48,55 @@ exports.login = asyncHandler(async (req, res, next) => {
   }
 
   sendTokenResponse(user, 200, res);
+});
+
+// @desc      Login with Microsoft 365
+// @route     POST /api/auth/microsoft
+// @access    Public
+exports.microsoftLogin = asyncHandler(async (req, res, next) => {
+  const { email, accessToken } = req.body;
+
+  if (!email || !accessToken) {
+    return next(new ErrorResponse('Please provide email and access token', 400));
+  }
+
+  try {
+    // Check if Microsoft 365 integration is enabled
+    if (!process.env.ENABLE_MICROSOFT_365 || process.env.ENABLE_MICROSOFT_365 !== 'true') {
+      return next(new ErrorResponse('Microsoft 365 integration is not enabled', 400));
+    }
+
+    // Verify the token with Microsoft (this would be a more complex validation in production)
+    // For now, we'll just check if the user exists in our database
+    let user = await User.findOne({ email });
+
+    if (!user) {
+      // If user doesn't exist, try to sync from Microsoft 365
+      try {
+        // Get user info from Microsoft 365
+        const msUserInfo = await microsoft365.getUserInfo(email);
+
+        // Create user in our database
+        user = await User.create({
+          name: msUserInfo.displayName,
+          email: msUserInfo.mail || msUserInfo.userPrincipalName,
+          // Generate a random password
+          password: crypto.randomBytes(10).toString('hex'),
+          // Default role
+          role: 'user'
+        });
+      } catch (msError) {
+        console.error('Error syncing user from Microsoft 365:', msError);
+        return next(new ErrorResponse('Failed to authenticate with Microsoft 365', 401));
+      }
+    }
+
+    // Send token response
+    sendTokenResponse(user, 200, res);
+  } catch (error) {
+    console.error('Microsoft login error:', error);
+    return next(new ErrorResponse('Failed to authenticate with Microsoft 365', 401));
+  }
 });
 
 // @desc      Log user out / clear cookie

@@ -19,11 +19,13 @@ import {
   Book as KnowledgeIcon,
   Engineering as SolutionIcon,
   People as UserIcon,
+  Settings as SettingsIcon,
   ExpandLess,
   ExpandMore,
 } from '@mui/icons-material';
 import { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { hasPermission } from '../../utils/permissions';
 
 const Sidebar = ({ drawerWidth, mobileOpen, handleDrawerToggle, isMobile }) => {
   const location = useLocation();
@@ -67,8 +69,8 @@ const Sidebar = ({ drawerWidth, mobileOpen, handleDrawerToggle, isMobile }) => {
     },
   ];
 
-  // Add Solutions menu item for staff and admin
-  if (user?.role === 'staff' || user?.role === 'admin') {
+  // Add Solutions menu item for users with view_solutions permission
+  if (hasPermission(user, 'view_solutions')) {
     menuItems.push({
       text: 'Solutions',
       icon: <SolutionIcon />,
@@ -103,7 +105,7 @@ const Sidebar = ({ drawerWidth, mobileOpen, handleDrawerToggle, isMobile }) => {
         ))}
 
         {/* Admin Menu */}
-        {user?.role === 'admin' && (
+        {hasPermission(user, 'manage_users') && (
           <>
             <ListItem disablePadding>
               <ListItemButton onClick={() => handleMenuToggle('admin')}>
@@ -124,6 +126,19 @@ const Sidebar = ({ drawerWidth, mobileOpen, handleDrawerToggle, isMobile }) => {
                 >
                   <ListItemText primary="Users" />
                 </ListItemButton>
+                {hasPermission(user, 'manage_settings') && (
+                  <ListItemButton
+                    component={RouterLink}
+                    to="/dashboard/admin/settings"
+                    selected={isActive('/dashboard/admin/settings')}
+                    sx={{ pl: 4 }}
+                  >
+                    <ListItemIcon sx={{ minWidth: 36 }}>
+                      <SettingsIcon fontSize="small" />
+                    </ListItemIcon>
+                    <ListItemText primary="Settings" />
+                  </ListItemButton>
+                )}
               </List>
             </Collapse>
           </>
@@ -175,3 +190,4 @@ const Sidebar = ({ drawerWidth, mobileOpen, handleDrawerToggle, isMobile }) => {
 };
 
 export default Sidebar;
+

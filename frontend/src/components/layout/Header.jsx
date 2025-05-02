@@ -23,6 +23,7 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
+import NotificationCenter from '../notifications/NotificationCenter';
 
 const Header = ({ drawerWidth, handleDrawerToggle }) => {
   const { user, logout } = useAuth();
@@ -82,6 +83,9 @@ const Header = ({ drawerWidth, handleDrawerToggle }) => {
               {mode === 'dark' ? <LightModeIcon /> : <DarkModeIcon />}
             </IconButton>
           </Tooltip>
+
+          {/* Notification Center */}
+          <NotificationCenter />
 
           <Tooltip title="Account settings">
             <IconButton

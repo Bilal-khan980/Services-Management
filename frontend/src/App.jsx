@@ -41,9 +41,14 @@ import SolutionDetail from './pages/solutions/SolutionDetail';
 import UserList from './pages/admin/UserList';
 import UserCreate from './pages/admin/UserCreate';
 import UserEdit from './pages/admin/UserEdit';
+import Settings from './pages/admin/Settings';
+
+// Import permission utilities
+import { hasRole, getAccessDeniedMessage } from './utils/permissions';
+import PermissionGuard from './components/common/PermissionGuard';
 
 // Protected Route Component
-const ProtectedRoute = ({ children, allowedRoles = [] }) => {
+const ProtectedRoute = ({ children, allowedRoles = [], requiredPermission = null }) => {
   const { isAuthenticated, user, loading } = useAuth();
 
   if (loading) {
@@ -54,8 +59,40 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
     return <Navigate to="/login" />;
   }
 
-  if (allowedRoles.length > 0 && !allowedRoles.includes(user?.role)) {
-    return <Navigate to="/dashboard" />;
+  // Check for role-based access
+  if (allowedRoles.length > 0) {
+    const hasAccess = allowedRoles.some(role => hasRole(user, role));
+    if (!hasAccess) {
+      return (
+        <Navigate
+          to="/dashboard"
+          state={{
+            accessDenied: true,
+            message: `You need ${allowedRoles[0]} role or higher to access this page`
+          }}
+        />
+      );
+    }
+  }
+
+  // Check for permission-based access
+  if (requiredPermission) {
+    return (
+      <PermissionGuard
+        permission={requiredPermission}
+        fallback={
+          <Navigate
+            to="/dashboard"
+            state={{
+              accessDenied: true,
+              message: getAccessDeniedMessage(requiredPermission)
+            }}
+          />
+        }
+      >
+        {children}
+      </PermissionGuard>
+    );
   }
 
   return children;
@@ -109,7 +146,7 @@ function App() {
           <Route
             path="knowledge/create"
             element={
-              <ProtectedRoute allowedRoles={['staff', 'admin']}>
+              <ProtectedRoute allowedRoles={['editor', 'staff', 'admin', 'enterprise_admin']}>
                 <KnowledgeCreate />
               </ProtectedRoute>
             }
@@ -120,7 +157,7 @@ function App() {
           <Route
             path="solutions"
             element={
-              <ProtectedRoute allowedRoles={['staff', 'admin']}>
+              <ProtectedRoute allowedRoles={['editor', 'staff', 'admin', 'enterprise_admin']}>
                 <SolutionList />
               </ProtectedRoute>
             }
@@ -128,7 +165,7 @@ function App() {
           <Route
             path="solutions/create"
             element={
-              <ProtectedRoute allowedRoles={['staff', 'admin']}>
+              <ProtectedRoute allowedRoles={['editor', 'staff', 'admin', 'enterprise_admin']}>
                 <SolutionCreate />
               </ProtectedRoute>
             }
@@ -136,7 +173,7 @@ function App() {
           <Route
             path="solutions/:id"
             element={
-              <ProtectedRoute allowedRoles={['staff', 'admin']}>
+              <ProtectedRoute allowedRoles={['editor', 'staff', 'admin', 'enterprise_admin']}>
                 <SolutionDetail />
               </ProtectedRoute>
             }
@@ -146,7 +183,7 @@ function App() {
           <Route
             path="admin/users"
             element={
-              <ProtectedRoute allowedRoles={['admin']}>
+              <ProtectedRoute allowedRoles={['admin', 'enterprise_admin']}>
                 <UserList />
               </ProtectedRoute>
             }
@@ -154,7 +191,7 @@ function App() {
           <Route
             path="admin/users/create"
             element={
-              <ProtectedRoute allowedRoles={['admin']}>
+              <ProtectedRoute allowedRoles={['admin', 'enterprise_admin']}>
                 <UserCreate />
               </ProtectedRoute>
             }
@@ -162,8 +199,16 @@ function App() {
           <Route
             path="admin/users/:id"
             element={
-              <ProtectedRoute allowedRoles={['admin']}>
+              <ProtectedRoute allowedRoles={['admin', 'enterprise_admin']}>
                 <UserEdit />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="admin/settings"
+            element={
+              <ProtectedRoute allowedRoles={['admin', 'enterprise_admin']}>
+                <Settings />
               </ProtectedRoute>
             }
           />

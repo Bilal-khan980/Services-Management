@@ -8,17 +8,21 @@ A comprehensive IT Service Management platform for managing tickets, changes, kn
 - **Change Management**: Submit, review, and approve change requests
 - **Knowledge Management**: Create and search knowledge base articles
 - **Solutions Management**: Internal staff-only portal for how-to documents
-- **User Management**: Role-based access control (User, Staff, Admin)
+- **User Management**: Role-based access control (User, Editor, Staff, Admin, Enterprise Admin)
 - **Email Integration**: Notifications for ticket updates, changes, etc.
 - **Authentication**: Secure login with password reset functionality
+- **Microsoft 365 Integration**: Single Sign-On with Microsoft 365 accounts
+- **Branding Customization**: Customize logo, favicon, banner, and colors
 
 ## Technology Stack
 
-- **Frontend**: React.js with React Router v7
+- **Frontend**: React.js with Material UI and React Router
 - **Backend**: Node.js with Express.js
 - **Database**: MongoDB
 - **Authentication**: JWT with OAuth 2.0 support
 - **Email**: Nodemailer for email notifications
+- **Microsoft Integration**: Microsoft Graph API for Microsoft 365 integration
+- **Real-time Notifications**: In-app notification system
 
 ## Prerequisites
 
@@ -40,21 +44,34 @@ A comprehensive IT Service Management platform for managing tickets, changes, kn
    npm install
    ```
 
-3. Create a `.env` file in the backend directory with the following variables:
+3. Create a `.env` file in the backend directory (copy from `.env.example`):
    ```
-   PORT=5000
-   MONGODB_URI=mongodb://localhost:27017/itsm
-   JWT_SECRET=your_jwt_secret_key_here
-   JWT_EXPIRE=30d
-   EMAIL_SERVICE=outlook
-   EMAIL_USERNAME=your_email@outlook.com
-   EMAIL_PASSWORD=your_email_password
-   EMAIL_FROM=your_email@outlook.com
-   MICROSOFT_CLIENT_ID=your_microsoft_client_id
-   MICROSOFT_CLIENT_SECRET=your_microsoft_client_secret
-   MICROSOFT_TENANT_ID=your_microsoft_tenant_id
-   MICROSOFT_CALLBACK_URL=http://localhost:5000/api/auth/microsoft/callback
    NODE_ENV=development
+   PORT=5000
+
+   MONGODB_URI=mongodb://localhost:27017/itsm-solution
+
+   JWT_SECRET=your_jwt_secret
+   JWT_EXPIRE=30d
+   JWT_COOKIE_EXPIRE=30
+
+   # Email configuration
+   EMAIL_PROVIDER=gmail
+   EMAIL_SERVICE=Gmail
+   EMAIL_USERNAME=your_email@gmail.com
+   EMAIL_PASSWORD=your_email_password
+   FROM_NAME=ITSM Solution
+   FROM_EMAIL=noreply@itsm-solution.com
+
+   # File upload
+   MAX_FILE_UPLOAD=5000000
+   FILE_UPLOAD_PATH=./public/uploads
+
+   # Microsoft 365 Integration
+   ENABLE_MICROSOFT_365=false
+   AZURE_TENANT_ID=your_tenant_id
+   AZURE_CLIENT_ID=your_client_id
+   AZURE_CLIENT_SECRET=your_client_secret
    ```
 
 4. Start the backend server:
@@ -74,10 +91,15 @@ A comprehensive IT Service Management platform for managing tickets, changes, kn
    npm install
    ```
 
-3. Create a `.env` file in the frontend directory with the following variables:
+3. Create a `.env` file in the frontend directory (copy from `.env.example`):
    ```
-   VITE_API_URL=http://localhost:5000/api
    VITE_APP_NAME=ITSM Solution
+   VITE_API_URL=http://localhost:5000/api
+
+   # Microsoft 365 Integration
+   VITE_ENABLE_MICROSOFT_365=false
+   VITE_AZURE_TENANT_ID=your_tenant_id
+   VITE_AZURE_CLIENT_ID=your_client_id
    ```
 
 4. Start the frontend development server:
@@ -87,17 +109,61 @@ A comprehensive IT Service Management platform for managing tickets, changes, kn
 
 5. Open your browser and navigate to `http://localhost:5173`
 
-## User Roles
+## User Roles and Permissions
 
-- **User**: Can create and view their own tickets and changes, access public knowledge articles
-- **Staff**: Can manage tickets, changes, and knowledge articles
-- **Admin**: Has full access to all features, including user management
+The application implements a comprehensive role-based access control system with the following roles:
+
+- **User** (Level 1):
+  - Can create and view their own tickets and changes
+  - Can access public knowledge articles
+  - Can comment on knowledge articles
+
+- **Editor/Knowledge Manager** (Level 2):
+  - All User permissions
+  - Can create/edit knowledge base articles
+  - Can create/edit solution articles
+  - Can assign tickets for escalation
+
+- **Staff** (Level 3):
+  - All Editor permissions
+  - Can view all tickets and changes
+  - Can update any ticket or change
+  - Can manage knowledge articles
+
+- **Admin** (Level 4):
+  - All Staff permissions
+  - Can delete tickets, changes, knowledge articles, and solutions
+  - Can manage users (create/edit/delete/reset user passwords)
+  - Can manage system settings
+  - Cannot reset Admin or Enterprise Admin passwords
+
+- **Enterprise Admin** (Level 5):
+  - Full access to all modules
+  - Can create and manage all user roles including Admins
+  - Can reset Admin passwords
+
+### Seeding Test Users
+
+To seed the database with test users of all roles, run:
+
+```
+cd backend
+npm run seed
+```
+
+This will create the following users (all with password: `password123`):
+- user@example.com (User)
+- editor@example.com (Editor/Knowledge Manager)
+- staff@example.com (Staff)
+- admin@example.com (Admin)
+- enterprise@example.com (Enterprise Admin)
 
 ## API Endpoints
 
 ### Authentication
 - `POST /api/auth/register` - Register a new user
 - `POST /api/auth/login` - Login user
+- `POST /api/auth/microsoft` - Login with Microsoft 365
 - `GET /api/auth/logout` - Logout user
 - `GET /api/auth/me` - Get current user
 - `PUT /api/auth/updatedetails` - Update user details
@@ -145,6 +211,21 @@ A comprehensive IT Service Management platform for managing tickets, changes, kn
 - `PUT /api/solutions/:id` - Update solution (Staff/Admin only)
 - `DELETE /api/solutions/:id` - Delete solution (Admin only)
 - `PUT /api/solutions/:id/attachment` - Upload attachment to solution (Staff/Admin only)
+
+### Settings
+- `GET /api/settings` - Get system settings
+- `PUT /api/settings` - Update system settings (Admin/Enterprise Admin only)
+- `PUT /api/settings/logo` - Upload logo (Admin/Enterprise Admin only)
+- `PUT /api/settings/favicon` - Upload favicon (Admin/Enterprise Admin only)
+- `PUT /api/settings/banner` - Upload banner (Admin/Enterprise Admin only)
+
+### Notifications
+- `GET /api/notifications` - Get user notifications
+- `GET /api/notifications/unread/count` - Get unread notification count
+- `PUT /api/notifications/:id/read` - Mark notification as read
+- `PUT /api/notifications/read-all` - Mark all notifications as read
+- `DELETE /api/notifications/:id` - Delete notification
+- `POST /api/notifications` - Create notification (Admin/Enterprise Admin only)
 
 ## License
 

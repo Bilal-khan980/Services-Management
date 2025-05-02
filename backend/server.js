@@ -24,7 +24,8 @@ const createUploadDirs = () => {
     `${uploadPath}/tickets`,
     `${uploadPath}/changes`,
     `${uploadPath}/knowledge`,
-    `${uploadPath}/solutions`
+    `${uploadPath}/solutions`,
+    `${uploadPath}/branding`
   ];
 
   dirs.forEach(dir => {
@@ -50,6 +51,8 @@ const changes = require('./routes/changes');
 const knowledge = require('./routes/knowledge');
 const solutions = require('./routes/solutions');
 const dashboard = require('./routes/dashboard');
+const settings = require('./routes/settings');
+const notifications = require('./routes/notifications');
 
 const app = express();
 
@@ -94,6 +97,8 @@ app.use('/api/changes', changes);
 app.use('/api/knowledge', knowledge);
 app.use('/api/solutions', solutions);
 app.use('/api/dashboard', dashboard);
+app.use('/api/settings', settings);
+app.use('/api/notifications', notifications);
 
 app.use(errorHandler);
 

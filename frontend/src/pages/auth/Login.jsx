@@ -9,9 +9,11 @@ import {
   CircularProgress,
   InputAdornment,
   IconButton,
+  Divider,
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
+import MicrosoftLoginButton from '../../components/auth/MicrosoftLoginButton';
 
 const Login = () => {
   const { login, loading } = useAuth();
@@ -93,6 +95,17 @@ const Login = () => {
       >
         {loading ? <CircularProgress size={24} /> : 'Sign In'}
       </Button>
+
+      {/* Microsoft Login */}
+      <Box sx={{ position: 'relative', my: 3 }}>
+        <Divider>
+          <Typography variant="body2" color="text.secondary">
+            OR
+          </Typography>
+        </Divider>
+      </Box>
+
+      <MicrosoftLoginButton />
 
       <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
         <Link component={RouterLink} to="/forgot-password" variant="body2">

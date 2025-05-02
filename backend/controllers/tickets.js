@@ -2,13 +2,15 @@ const path = require('path');
 const ErrorResponse = require('../utils/errorResponse');
 const asyncHandler = require('../middleware/async');
 const Ticket = require('../models/Ticket');
+const User = require('../models/User');
+const { createNotificationHelper } = require('./notifications');
 
 // @desc      Get all tickets
 // @route     GET /api/tickets
 // @access    Private
 exports.getTickets = asyncHandler(async (req, res, next) => {
-  // If user is not admin or staff, only show their tickets
-  if (req.user.role !== 'admin' && req.user.role !== 'staff') {
+  // If user is not admin, staff, editor, or enterprise_admin, only show their tickets
+  if (req.user.role !== 'admin' && req.user.role !== 'staff' && req.user.role !== 'editor' && req.user.role !== 'enterprise_admin') {
     req.query.user = req.user.id;
   }
 
@@ -43,11 +45,15 @@ exports.getTicket = asyncHandler(async (req, res, next) => {
       );
     }
 
-    // Make sure user is ticket owner or admin/staff
+    // Make sure user is ticket owner or has appropriate role
     if (
+      ticket.user &&
+      ticket.user._id &&
       ticket.user._id.toString() !== req.user.id &&
       req.user.role !== 'admin' &&
-      req.user.role !== 'staff'
+      req.user.role !== 'staff' &&
+      req.user.role !== 'editor' &&
+      req.user.role !== 'enterprise_admin'
     ) {
       return next(
         new ErrorResponse(
@@ -78,6 +84,29 @@ exports.createTicket = asyncHandler(async (req, res, next) => {
 
   const ticket = await Ticket.create(req.body);
 
+  // Create notification for admins and staff
+  try {
+    // Find all admins and staff
+    const admins = await User.find({
+      role: { $in: ['admin', 'staff', 'enterprise_admin'] }
+    });
+
+    // Create notifications for each admin/staff
+    for (const admin of admins) {
+      await createNotificationHelper({
+        title: 'New Ticket Created',
+        message: `A new ticket "${ticket.title}" has been created and requires attention.`,
+        type: 'ticket',
+        priority: ticket.priority,
+        user: admin._id,
+        relatedItem: ticket._id,
+        sendEmail: true
+      });
+    }
+  } catch (err) {
+    console.error('Error creating notification:', err);
+  }
+
   res.status(201).json({
     success: true,
     data: ticket
@@ -96,11 +125,14 @@ exports.updateTicket = asyncHandler(async (req, res, next) => {
     );
   }
 
-  // Make sure user is ticket owner or admin/staff
+  // Make sure user is ticket owner or has appropriate role
   if (
+    ticket.user &&
     ticket.user.toString() !== req.user.id &&
     req.user.role !== 'admin' &&
-    req.user.role !== 'staff'
+    req.user.role !== 'staff' &&
+    req.user.role !== 'editor' &&
+    req.user.role !== 'enterprise_admin'
   ) {
     return next(
       new ErrorResponse(
@@ -110,10 +142,66 @@ exports.updateTicket = asyncHandler(async (req, res, next) => {
     );
   }
 
+  // Get the old ticket data before updating
+  const oldTicket = { ...ticket.toObject() };
+
   ticket = await Ticket.findByIdAndUpdate(req.params.id, req.body, {
     new: true,
     runValidators: true
   });
+
+  // Create notification for ticket owner if they didn't make the update
+  try {
+    if (ticket.user && ticket.user.toString() !== req.user.id) {
+      // Create notification for ticket owner
+      await createNotificationHelper({
+        title: 'Ticket Updated',
+        message: `Your ticket "${ticket.title}" has been updated.`,
+        type: 'ticket',
+        priority: ticket.priority,
+        user: ticket.user,
+        relatedItem: ticket._id,
+        sendEmail: true
+      });
+    }
+
+    // If status changed, create additional notifications
+    if (oldTicket.status !== ticket.status) {
+      // Create notification for admins and staff
+      const admins = await User.find({
+        role: { $in: ['admin', 'staff', 'enterprise_admin'] }
+      });
+
+      for (const admin of admins) {
+        if (admin._id.toString() !== req.user.id) {
+          await createNotificationHelper({
+            title: 'Ticket Status Changed',
+            message: `Ticket "${ticket.title}" status changed from "${oldTicket.status}" to "${ticket.status}".`,
+            type: 'ticket',
+            priority: ticket.priority,
+            user: admin._id,
+            relatedItem: ticket._id,
+            sendEmail: false
+          });
+        }
+      }
+    }
+
+    // If assigned to someone, notify them
+    if (req.body.assignedTo && (!oldTicket.assignedTo || oldTicket.assignedTo.toString() !== req.body.assignedTo)) {
+      await createNotificationHelper({
+        title: 'Ticket Assigned',
+        message: `Ticket "${ticket.title}" has been assigned to you.`,
+        type: 'ticket',
+        priority: ticket.priority,
+        user: req.body.assignedTo,
+        relatedItem: ticket._id,
+        sendEmail: true
+      });
+    }
+  } catch (err) {
+    console.error('Error creating notification:', err);
+  }
 
   res.status(200).json({
     success: true,
@@ -133,8 +221,13 @@ exports.deleteTicket = asyncHandler(async (req, res, next) => {
     );
   }
 
-  // Make sure user is ticket owner or admin
-  if (ticket.user.toString() !== req.user.id && req.user.role !== 'admin') {
+  // Make sure user is ticket owner or has appropriate role
+  if (
+    ticket.user &&
+    ticket.user.toString() !== req.user.id &&
+    req.user.role !== 'admin' &&
+    req.user.role !== 'enterprise_admin'
+  ) {
     return next(
       new ErrorResponse(
         `User ${req.user.id} is not authorized to delete this ticket`,
@@ -163,11 +256,14 @@ exports.ticketAttachmentUpload = asyncHandler(async (req, res, next) => {
     );
   }
 
-  // Make sure user is ticket owner or admin/staff
+  // Make sure user is ticket owner or has appropriate role
   if (
+    ticket.user &&
     ticket.user.toString() !== req.user.id &&
     req.user.role !== 'admin' &&
-    req.user.role !== 'staff'
+    req.user.role !== 'staff' &&
+    req.user.role !== 'editor' &&
+    req.user.role !== 'enterprise_admin'
   ) {
     return next(
       new ErrorResponse(

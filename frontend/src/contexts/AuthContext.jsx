@@ -40,20 +40,25 @@ export const AuthProvider = ({ children }) => {
   const loadUser = useCallback(async () => {
     try {
       if (!token) {
+        console.log('No token available, skipping user load');
         setLoading(false);
         return;
       }
+
+      console.log('Loading user data with token:', token.substring(0, 10) + '...');
 
       // Set the token in the headers for this request
       api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
       const res = await api.get('/auth/me');
+      console.log('User data loaded:', res.data.data);
       setUser(res.data.data);
       setLoading(false);
     } catch (error) {
       console.error('Error loading user:', error);
       // Only logout if it's an authentication error
       if (error.response && error.response.status === 401) {
+        console.log('Authentication error, logging out');
         logout();
       }
       setLoading(false);

@@ -232,9 +232,10 @@ const TicketDetail = () => {
     );
   }
 
-  const isStaffOrAdmin = user.role === 'staff' || user.role === 'admin';
+  const isStaffOrAdmin = user.role === 'staff' || user.role === 'admin' || user.role === 'enterprise_admin';
+  const isEditor = user.role === 'editor';
   const isTicketOwner = ticket.user._id === user._id;
-  const canEdit = isStaffOrAdmin || isTicketOwner;
+  const canEdit = isStaffOrAdmin || isTicketOwner || isEditor;
 
   return (
     <Box>

@@ -14,9 +14,9 @@ import {
   IconButton,
   Divider,
 } from '@mui/material';
-import { 
-  Visibility, 
-  VisibilityOff, 
+import {
+  Visibility,
+  VisibilityOff,
   Save as SaveIcon,
   ArrowBack as ArrowBackIcon,
 } from '@mui/icons-material';
@@ -27,18 +27,18 @@ const UserEdit = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user: currentUser } = useAuth();
-  
+
   const [userData, setUserData] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     role: '',
   });
-  
+
   const [passwordData, setPasswordData] = useState({
     password: '',
   });
-  
+
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
@@ -52,7 +52,7 @@ const UserEdit = () => {
     try {
       setLoading(true);
       const res = await api.get(`/users/${id}`);
-      
+
       if (res.data.success) {
         setUserData(res.data.data);
         setFormData({
@@ -96,13 +96,13 @@ const UserEdit = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     try {
       setUpdating(true);
       setError('');
-      
+
       const res = await api.put(`/users/${id}`, formData);
-      
+
       if (res.data.success) {
         setSuccess('User updated successfully');
         setUserData(res.data.data);
@@ -117,27 +117,27 @@ const UserEdit = () => {
 
   const handlePasswordSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!passwordData.password) {
       setPasswordError('Password is required');
       return;
     }
-    
+
     if (passwordData.password.length < 6) {
       setPasswordError('Password must be at least 6 characters');
       return;
     }
-    
+
     try {
       setUpdatingPassword(true);
       setPasswordError('');
-      
+
       // In a real app, you would have a specific endpoint for admin password reset
       // For now, we'll use the user update endpoint
       const res = await api.put(`/users/${id}`, {
         password: passwordData.password,
       });
-      
+
       if (res.data.success) {
         setPasswordSuccess('Password updated successfully');
         setPasswordData({ password: '' });
@@ -209,19 +209,19 @@ const UserEdit = () => {
             <Typography variant="h6" gutterBottom>
               User Information
             </Typography>
-            
+
             {error && (
               <Alert severity="error" sx={{ mb: 3 }}>
                 {error}
               </Alert>
             )}
-            
+
             {success && (
               <Alert severity="success" sx={{ mb: 3 }}>
                 {success}
               </Alert>
             )}
-            
+
             <Box component="form" onSubmit={handleSubmit}>
               <Grid container spacing={3}>
                 <Grid item xs={12}>
@@ -234,7 +234,7 @@ const UserEdit = () => {
                     onChange={handleChange}
                   />
                 </Grid>
-                
+
                 <Grid item xs={12}>
                   <TextField
                     required
@@ -246,7 +246,7 @@ const UserEdit = () => {
                     onChange={handleChange}
                   />
                 </Grid>
-                
+
                 <Grid item xs={12}>
                   <TextField
                     select
@@ -260,11 +260,16 @@ const UserEdit = () => {
                     helperText={isSelfEdit ? "You cannot change your own role" : ""}
                   >
                     <MenuItem value="user">User</MenuItem>
+                    <MenuItem value="editor">Editor/Knowledge Manager</MenuItem>
                     <MenuItem value="staff">Staff</MenuItem>
                     <MenuItem value="admin">Admin</MenuItem>
+                    {/* Only enterprise_admin can assign enterprise_admin role */}
+                    {currentUser.role === 'enterprise_admin' && (
+                      <MenuItem value="enterprise_admin">Enterprise Admin</MenuItem>
+                    )}
                   </TextField>
                 </Grid>
-                
+
                 <Grid item xs={12}>
                   <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
                     <Button
@@ -281,25 +286,25 @@ const UserEdit = () => {
             </Box>
           </Paper>
         </Grid>
-        
+
         <Grid item xs={12} md={6}>
           <Paper sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom>
               Reset Password
             </Typography>
-            
+
             {passwordError && (
               <Alert severity="error" sx={{ mb: 3 }}>
                 {passwordError}
               </Alert>
             )}
-            
+
             {passwordSuccess && (
               <Alert severity="success" sx={{ mb: 3 }}>
                 {passwordSuccess}
               </Alert>
             )}
-            
+
             <Box component="form" onSubmit={handlePasswordSubmit}>
               <Grid container spacing={3}>
                 <Grid item xs={12}>
@@ -326,7 +331,7 @@ const UserEdit = () => {
                     }}
                   />
                 </Grid>
-                
+
                 <Grid item xs={12}>
                   <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
                     <Button
@@ -343,12 +348,12 @@ const UserEdit = () => {
               </Grid>
             </Box>
           </Paper>
-          
+
           <Paper sx={{ p: 3, mt: 3 }}>
             <Typography variant="h6" gutterBottom>
               User Details
             </Typography>
-            
+
             <Grid container spacing={2}>
               <Grid item xs={12} sm={6}>
                 <Typography variant="subtitle2" color="textSecondary">
@@ -356,7 +361,7 @@ const UserEdit = () => {
                 </Typography>
                 <Typography variant="body2">{userData._id}</Typography>
               </Grid>
-              
+
               <Grid item xs={12} sm={6}>
                 <Typography variant="subtitle2" color="textSecondary">
                   Created At
