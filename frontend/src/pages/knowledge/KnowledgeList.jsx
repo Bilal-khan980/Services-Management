@@ -1,30 +1,30 @@
-import { useState, useEffect } from 'react';
-import { Link as RouterLink } from 'react-router-dom';
 import {
-  Box,
-  Typography,
-  Button,
-  Paper,
-  Grid,
-  Card,
-  CardContent,
-  CardActions,
-  Chip,
-  TextField,
-  InputAdornment,
-  IconButton,
-  CircularProgress,
-  Alert,
-  Pagination,
-} from '@mui/material';
-import {
-  Add as AddIcon,
-  Search as SearchIcon,
-  Clear as ClearIcon,
-  Visibility as VisibilityIcon,
-  ThumbUp as ThumbUpIcon,
-  ThumbDown as ThumbDownIcon,
+    Add as AddIcon,
+    Clear as ClearIcon,
+    Search as SearchIcon,
+    ThumbDown as ThumbDownIcon,
+    ThumbUp as ThumbUpIcon,
+    Visibility as VisibilityIcon,
 } from '@mui/icons-material';
+import {
+    Alert,
+    Box,
+    Button,
+    Card,
+    CardActions,
+    CardContent,
+    Chip,
+    CircularProgress,
+    Grid,
+    IconButton,
+    InputAdornment,
+    Pagination,
+    Paper,
+    TextField,
+    Typography,
+} from '@mui/material';
+import { useEffect, useState } from 'react';
+import { Link as RouterLink } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
 import { hasPermission } from '../../utils/permissions';
@@ -103,9 +103,9 @@ const KnowledgeList = () => {
   // Check if the backend server is running
   const checkServerStatus = async () => {
     try {
-      // Use the correct health check endpoint with full path
-      const res = await api.get('/api/health');
-      console.log('Server status:', res.data);
+      // Try to access the health check endpoint
+      const res = await api.get('/health');
+      console.log('Server status check response:', res.data);
       return true;
     } catch (err) {
       console.error('Error checking server status:', err);
@@ -318,7 +318,7 @@ const KnowledgeList = () => {
                     </Typography>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <Typography variant="caption" color="text.secondary">
-                        By {article.author.name}
+                        By {typeof article.author === 'object' && article.author?.name ? article.author.name : 'Unknown Author'}
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
                         {formatDate(article.createdAt)}
@@ -422,7 +422,7 @@ const KnowledgeList = () => {
                     </Typography>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <Typography variant="caption" color="text.secondary">
-                        By {article.author.name}
+                        By {typeof article.author === 'object' && article.author?.name ? article.author.name : 'Unknown Author'}
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
                         {formatDate(article.createdAt)}

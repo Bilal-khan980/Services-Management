@@ -1,24 +1,24 @@
-import { useState, useEffect } from 'react';
-import { Link as RouterLink, useLocation } from 'react-router-dom';
 import {
-  Grid,
-  Card,
-  CardContent,
-  Typography,
-  Button,
-  Box,
-  Paper,
-  Divider,
-  CircularProgress,
-  Alert,
-  Snackbar,
-} from '@mui/material';
-import {
-  ConfirmationNumber as TicketIcon,
-  SwapHoriz as ChangeIcon,
-  Book as KnowledgeIcon,
-  Engineering as SolutionIcon,
+    SwapHoriz as ChangeIcon,
+    Book as KnowledgeIcon,
+    Engineering as SolutionIcon,
+    ConfirmationNumber as TicketIcon,
 } from '@mui/icons-material';
+import {
+    Alert,
+    Box,
+    Button,
+    Card,
+    CardContent,
+    CircularProgress,
+    Divider,
+    Grid,
+    Paper,
+    Snackbar,
+    Typography,
+} from '@mui/material';
+import { useEffect, useState } from 'react';
+import { Link as RouterLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
 import { hasPermission } from '../utils/permissions';
@@ -159,8 +159,8 @@ const Dashboard = () => {
         <Grid container spacing={3} sx={{ mt: 2 }}>
         {/* Tickets Card */}
         <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
+          <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+            <CardContent sx={{ flexGrow: 1 }}>
               <Box
                 sx={{
                   display: 'flex',
@@ -185,24 +185,25 @@ const Dashboard = () => {
                   Resolved: {stats.tickets.resolved}
                 </Typography>
               </Box>
+            </CardContent>
+            <Box sx={{ p: 2, pt: 0 }}>
               <Button
                 component={RouterLink}
                 to="/dashboard/tickets"
                 variant="outlined"
                 size="small"
-                sx={{ mt: 2 }}
                 fullWidth
               >
                 View All
               </Button>
-            </CardContent>
+            </Box>
           </Card>
         </Grid>
 
         {/* Changes Card */}
         <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
+          <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+            <CardContent sx={{ flexGrow: 1 }}>
               <Box
                 sx={{
                   display: 'flex',
@@ -227,24 +228,25 @@ const Dashboard = () => {
                   Implemented: {stats.changes.implemented}
                 </Typography>
               </Box>
+            </CardContent>
+            <Box sx={{ p: 2, pt: 0 }}>
               <Button
                 component={RouterLink}
                 to="/dashboard/changes"
                 variant="outlined"
                 size="small"
-                sx={{ mt: 2 }}
                 fullWidth
               >
                 View All
               </Button>
-            </CardContent>
+            </Box>
           </Card>
         </Grid>
 
         {/* Knowledge Base Card */}
         <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
+          <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+            <CardContent sx={{ flexGrow: 1 }}>
               <Box
                 sx={{
                   display: 'flex',
@@ -258,30 +260,31 @@ const Dashboard = () => {
               <Typography variant="h3" component="div">
                 {stats.knowledge.total}
               </Typography>
-              <Box sx={{ mt: 2 }}>
+              <Box sx={{ mt: 2, mb: 2 }}>
                 <Typography variant="body2" color="text.secondary">
                   Total articles in knowledge base
                 </Typography>
               </Box>
+            </CardContent>
+            <Box sx={{ p: 2, pt: 0 }}>
               <Button
                 component={RouterLink}
                 to="/dashboard/knowledge"
                 variant="outlined"
                 size="small"
-                sx={{ mt: 2 }}
                 fullWidth
               >
                 View All
               </Button>
-            </CardContent>
+            </Box>
           </Card>
         </Grid>
 
         {/* Solutions Card - Only show to users with view_solutions permission */}
         {hasPermission(user, 'view_solutions') && (
           <Grid item xs={12} sm={6} md={3}>
-            <Card>
-              <CardContent>
+            <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+              <CardContent sx={{ flexGrow: 1 }}>
                 <Box
                   sx={{
                     display: 'flex',
@@ -295,22 +298,23 @@ const Dashboard = () => {
                 <Typography variant="h3" component="div">
                   {stats.solutions.total}
                 </Typography>
-                <Box sx={{ mt: 2 }}>
+                <Box sx={{ mt: 2, mb: 2 }}>
                   <Typography variant="body2" color="text.secondary">
                     Internal solutions for staff
                   </Typography>
                 </Box>
+              </CardContent>
+              <Box sx={{ p: 2, pt: 0 }}>
                 <Button
                   component={RouterLink}
                   to="/dashboard/solutions"
                   variant="outlined"
                   size="small"
-                  sx={{ mt: 2 }}
                   fullWidth
                 >
                   View All
                 </Button>
-              </CardContent>
+              </Box>
             </Card>
           </Grid>
         )}
@@ -397,9 +401,90 @@ const Dashboard = () => {
               Recent Activity
             </Typography>
             <Divider sx={{ mb: 2 }} />
-            <Typography variant="body2" color="text.secondary">
-              No recent activity to display.
-            </Typography>
+            {stats.recentActivity && stats.recentActivity.length > 0 ? (
+              <Box sx={{ maxHeight: '300px', overflow: 'auto' }}>
+                {stats.recentActivity.map((activity) => {
+                  // Determine icon and color based on activity type
+                  let Icon = TicketIcon;
+                  let color = 'primary';
+                  let path = '/dashboard/tickets';
+
+                  if (activity.type === 'change') {
+                    Icon = ChangeIcon;
+                    color = 'secondary';
+                    path = '/dashboard/changes';
+                  } else if (activity.type === 'knowledge') {
+                    Icon = KnowledgeIcon;
+                    color = 'info';
+                    path = '/dashboard/knowledge';
+                  } else if (activity.type === 'solution') {
+                    Icon = SolutionIcon;
+                    color = 'success';
+                    path = '/dashboard/solutions';
+                  }
+
+                  // Format date
+                  const formattedDate = new Date(activity.createdAt).toLocaleString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  });
+
+                  return (
+                    <Box
+                      key={`${activity.type}-${activity.id}`}
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        mb: 2,
+                        p: 1,
+                        borderRadius: 1,
+                        '&:hover': {
+                          bgcolor: 'action.hover'
+                        }
+                      }}
+                      component={RouterLink}
+                      to={`${path}/${activity.id}`}
+                      style={{ textDecoration: 'none', color: 'inherit' }}
+                    >
+                      <Box
+                        sx={{
+                          mr: 2,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          width: 40,
+                          height: 40,
+                          borderRadius: '50%',
+                          bgcolor: `${color}.lighter`,
+                          color: `${color}.main`
+                        }}
+                      >
+                        <Icon />
+                      </Box>
+                      <Box sx={{ flexGrow: 1 }}>
+                        <Typography variant="body2" noWrap sx={{ fontWeight: 'medium' }}>
+                          {activity.title}
+                        </Typography>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <Typography variant="caption" color="text.secondary">
+                            {activity.type.charAt(0).toUpperCase() + activity.type.slice(1)} • {activity.status}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {formattedDate}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </Box>
+                  );
+                })}
+              </Box>
+            ) : (
+              <Typography variant="body2" color="text.secondary">
+                No recent activity to display.
+              </Typography>
+            )}
           </Paper>
         </Grid>
       </Grid>

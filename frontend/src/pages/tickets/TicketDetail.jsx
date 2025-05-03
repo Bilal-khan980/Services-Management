@@ -1,29 +1,29 @@
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
 import {
-  Box,
-  Typography,
-  Paper,
-  Grid,
-  Chip,
-  Button,
-  Divider,
-  TextField,
-  MenuItem,
-  CircularProgress,
-  Alert,
-  Avatar,
-  List,
-  ListItem,
-  ListItemAvatar,
-  ListItemText,
-} from '@mui/material';
-import {
-  ArrowBack as ArrowBackIcon,
-  Save as SaveIcon,
-  Send as SendIcon,
-  AttachFile as AttachFileIcon,
+    ArrowBack as ArrowBackIcon,
+    AttachFile as AttachFileIcon,
+    Save as SaveIcon,
+    Send as SendIcon,
 } from '@mui/icons-material';
+import {
+    Alert,
+    Avatar,
+    Box,
+    Button,
+    Chip,
+    CircularProgress,
+    Divider,
+    Grid,
+    List,
+    ListItem,
+    ListItemAvatar,
+    ListItemText,
+    MenuItem,
+    Paper,
+    TextField,
+    Typography,
+} from '@mui/material';
+import { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
 import { hasPermission } from '../../utils/permissions';
@@ -65,6 +65,9 @@ const TicketDetail = () => {
     category: '',
     assignedTo: '',
   });
+
+  const [users, setUsers] = useState([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
 
   const fetchTicket = async () => {
     try {
@@ -116,9 +119,37 @@ const TicketDetail = () => {
     }
   };
 
+  const fetchUsers = async () => {
+    try {
+      setLoadingUsers(true);
+      // Only fetch users if the current user has permission to assign tickets
+      if (hasPermission(user, 'assign_tickets')) {
+        const res = await api.get('/users');
+        if (res.data.success) {
+          // Filter users to only include staff, admin, and enterprise_admin
+          const staffUsers = res.data.data.filter(user =>
+            ['staff', 'admin', 'enterprise_admin'].includes(user.role)
+          );
+          setUsers(staffUsers);
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching users:', err);
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+
   useEffect(() => {
     fetchTicket();
   }, [id]);
+
+  // Fetch users when edit mode is enabled
+  useEffect(() => {
+    if (editMode && users.length === 0) {
+      fetchUsers();
+    }
+  }, [editMode]);
 
   const handleEditChange = (e) => {
     setEditData({
@@ -130,7 +161,16 @@ const TicketDetail = () => {
   const handleUpdateTicket = async () => {
     try {
       setUpdating(true);
-      const res = await api.put(`/tickets/${id}`, editData);
+
+      // Create a copy of editData to modify
+      const updatedData = { ...editData };
+
+      // If assignedTo is an empty string, remove it from the request to avoid MongoDB casting error
+      if (updatedData.assignedTo === '') {
+        updatedData.assignedTo = null;
+      }
+
+      const res = await api.put(`/tickets/${id}`, updatedData);
 
       if (res.data.success) {
         setTicket(res.data.data);
@@ -406,14 +446,27 @@ const TicketDetail = () => {
             </Typography>
             {editMode && hasPermission(user, 'assign_tickets') ? (
               <TextField
+                select
                 fullWidth
                 name="assignedTo"
                 value={editData.assignedTo}
                 onChange={handleEditChange}
                 margin="dense"
                 size="small"
-                placeholder="User ID of assignee"
-              />
+                disabled={loadingUsers}
+                InputProps={{
+                  startAdornment: loadingUsers ? (
+                    <CircularProgress size={20} sx={{ mr: 1 }} />
+                  ) : null,
+                }}
+              >
+                <MenuItem value="">Not Assigned</MenuItem>
+                {users.map((user) => (
+                  <MenuItem key={user._id} value={user._id}>
+                    {user.name} ({user.role})
+                  </MenuItem>
+                ))}
+              </TextField>
             ) : (
               <Typography>
                 {ticket.assignedTo ? ticket.assignedTo.name : 'Not assigned'}

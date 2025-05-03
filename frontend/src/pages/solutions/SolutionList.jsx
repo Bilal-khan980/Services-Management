@@ -1,28 +1,28 @@
-import { useState, useEffect } from 'react';
-import { Link as RouterLink } from 'react-router-dom';
 import {
-  Box,
-  Typography,
-  Button,
-  Paper,
-  Grid,
-  Card,
-  CardContent,
-  CardActions,
-  Chip,
-  TextField,
-  InputAdornment,
-  IconButton,
-  CircularProgress,
-  Alert,
-  Pagination,
-} from '@mui/material';
-import {
-  Add as AddIcon,
-  Search as SearchIcon,
-  Clear as ClearIcon,
-  Visibility as VisibilityIcon,
+    Add as AddIcon,
+    Clear as ClearIcon,
+    Search as SearchIcon,
+    Visibility as VisibilityIcon,
 } from '@mui/icons-material';
+import {
+    Alert,
+    Box,
+    Button,
+    Card,
+    CardActions,
+    CardContent,
+    Chip,
+    CircularProgress,
+    Grid,
+    IconButton,
+    InputAdornment,
+    Pagination,
+    Paper,
+    TextField,
+    Typography,
+} from '@mui/material';
+import { useEffect, useState } from 'react';
+import { Link as RouterLink } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
 
@@ -47,11 +47,11 @@ const SolutionList = () => {
   const fetchSolutions = async (page = 1, limit = 9) => {
     try {
       setLoading(true);
-      
+
       let url = `/solutions?page=${page}&limit=${limit}`;
-      
+
       const res = await api.get(url);
-      
+
       setSolutions(res.data.data);
       setTotalPages(Math.ceil(res.data.pagination?.total / limit) || 1);
       setError('');
@@ -76,14 +76,14 @@ const SolutionList = () => {
       setSearchResults([]);
       return;
     }
-    
+
     try {
       setSearching(true);
-      
+
       // In a real app, you would have a search endpoint
       // For now, we'll simulate it by filtering solutions
       const res = await api.get(`/solutions?title[regex]=${searchQuery}&title[options]=i`);
-      
+
       setSearchResults(res.data.data);
     } catch (err) {
       console.error(err);
@@ -190,7 +190,9 @@ const SolutionList = () => {
                     </Typography>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <Typography variant="caption" color="text.secondary">
-                        By {solution.author.name}
+                        By {typeof solution.author === 'object' && solution.author?.name
+                          ? solution.author.name
+                          : 'Unknown Author'}
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
                         {formatDate(solution.createdAt)}
@@ -264,7 +266,9 @@ const SolutionList = () => {
                     </Typography>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <Typography variant="caption" color="text.secondary">
-                        By {solution.author.name}
+                        By {typeof solution.author === 'object' && solution.author?.name
+                          ? solution.author.name
+                          : 'Unknown Author'}
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
                         {formatDate(solution.createdAt)}

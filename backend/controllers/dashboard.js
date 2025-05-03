@@ -4,6 +4,7 @@ const Ticket = require('../models/Ticket');
 const Change = require('../models/Change');
 const Knowledge = require('../models/Knowledge');
 const Solution = require('../models/Solution');
+const User = require('../models/User');
 
 // @desc      Get dashboard statistics
 // @route     GET /api/dashboard/stats
@@ -93,13 +94,79 @@ exports.getDashboardStats = asyncHandler(async (req, res, next) => {
     console.log('User is admin/staff, showing all stats');
   }
 
+  // Get recent activity (last 10 items)
+  console.log('Fetching recent activity...');
+
+  // Get recent tickets
+  const recentTickets = await Ticket.find()
+    .sort({ createdAt: -1 })
+    .limit(5)
+    .select('title status priority createdAt')
+    .populate({
+      path: 'user',
+      select: 'name'
+    });
+
+  // Get recent changes
+  const recentChanges = await Change.find()
+    .sort({ createdAt: -1 })
+    .limit(5)
+    .select('title status priority createdAt')
+    .populate({
+      path: 'user',
+      select: 'name'
+    });
+
+  // Get recent knowledge articles
+  const recentKnowledge = await Knowledge.find()
+    .sort({ createdAt: -1 })
+    .limit(5)
+    .select('title status createdAt')
+    .populate({
+      path: 'author',
+      select: 'name'
+    });
+
+  // Combine and sort all recent activity
+  const recentActivity = [
+    ...recentTickets.map(item => ({
+      id: item._id,
+      type: 'ticket',
+      title: item.title,
+      status: item.status,
+      priority: item.priority,
+      createdAt: item.createdAt,
+      user: item.user?.name || 'Unknown User'
+    })),
+    ...recentChanges.map(item => ({
+      id: item._id,
+      type: 'change',
+      title: item.title,
+      status: item.status,
+      priority: item.priority,
+      createdAt: item.createdAt,
+      user: item.user?.name || 'Unknown User'
+    })),
+    ...recentKnowledge.map(item => ({
+      id: item._id,
+      type: 'knowledge',
+      title: item.title,
+      status: item.status,
+      createdAt: item.createdAt,
+      user: item.author?.name || 'Unknown User'
+    }))
+  ].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 10);
+
+  console.log(`Found ${recentActivity.length} recent activity items`);
+
   const responseData = {
     success: true,
     data: {
       tickets: ticketStats,
       changes: changeStats,
       knowledge: knowledgeStats,
-      solutions: solutionStats
+      solutions: solutionStats,
+      recentActivity
     }
   };
 

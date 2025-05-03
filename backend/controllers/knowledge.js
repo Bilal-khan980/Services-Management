@@ -95,7 +95,13 @@ exports.createKnowledgeArticle = asyncHandler(async (req, res, next) => {
   // Add author to req.body
   req.body.author = req.user.id;
 
-  const article = await Knowledge.create(req.body);
+  let article = await Knowledge.create(req.body);
+
+  // Populate the author field before sending the response
+  article = await Knowledge.findById(article._id).populate({
+    path: 'author',
+    select: 'name email'
+  });
 
   res.status(201).json({
     success: true,
@@ -131,6 +137,9 @@ exports.updateKnowledgeArticle = asyncHandler(async (req, res, next) => {
   article = await Knowledge.findByIdAndUpdate(req.params.id, req.body, {
     new: true,
     runValidators: true
+  }).populate({
+    path: 'author',
+    select: 'name email'
   });
 
   res.status(200).json({
@@ -232,9 +241,15 @@ exports.knowledgeAttachmentUpload = asyncHandler(async (req, res, next) => {
 
     await article.save();
 
+    // Populate the author field before sending the response
+    const populatedArticle = await Knowledge.findById(article._id).populate({
+      path: 'author',
+      select: 'name email'
+    });
+
     res.status(200).json({
       success: true,
-      data: article
+      data: populatedArticle
     });
   });
 });
@@ -295,9 +310,15 @@ exports.voteKnowledgeArticle = asyncHandler(async (req, res, next) => {
 
   await article.save();
 
+  // Populate the author field before sending the response
+  const populatedArticle = await Knowledge.findById(article._id).populate({
+    path: 'author',
+    select: 'name email'
+  });
+
   res.status(200).json({
     success: true,
-    data: article
+    data: populatedArticle
   });
 });
 

@@ -145,7 +145,14 @@ exports.updateTicket = asyncHandler(async (req, res, next) => {
   // Get the old ticket data before updating
   const oldTicket = { ...ticket.toObject() };
 
-  ticket = await Ticket.findByIdAndUpdate(req.params.id, req.body, {
+  // Handle assignedTo field - if it's null, remove it from the request
+  // to avoid MongoDB casting errors
+  const updateData = { ...req.body };
+  if (updateData.assignedTo === null || updateData.assignedTo === '') {
+    delete updateData.assignedTo;
+  }
+
+  ticket = await Ticket.findByIdAndUpdate(req.params.id, updateData, {
     new: true,
     runValidators: true
   });
@@ -188,7 +195,10 @@ exports.updateTicket = asyncHandler(async (req, res, next) => {
     }
 
     // If assigned to someone, notify them
-    if (req.body.assignedTo && (!oldTicket.assignedTo || oldTicket.assignedTo.toString() !== req.body.assignedTo)) {
+    if (req.body.assignedTo &&
+        req.body.assignedTo !== '' &&
+        req.body.assignedTo !== null &&
+        (!oldTicket.assignedTo || oldTicket.assignedTo.toString() !== req.body.assignedTo)) {
       await createNotificationHelper({
         title: 'Ticket Assigned',
         message: `Ticket "${ticket.title}" has been assigned to you.`,

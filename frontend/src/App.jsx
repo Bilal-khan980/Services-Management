@@ -1,54 +1,55 @@
+import { Box, Button, CircularProgress, CssBaseline, Typography } from '@mui/material';
 import { useEffect } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
-import { CssBaseline, Box, Typography, Button, CircularProgress } from '@mui/material';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import { useTheme } from './contexts/ThemeContext';
 
 // Layouts
-import MainLayout from './layouts/MainLayout';
 import AuthLayout from './layouts/AuthLayout';
+import MainLayout from './layouts/MainLayout';
 
 // Common Components
 import ErrorBoundary from './components/common/ErrorBoundary';
 
 // Pages
-import Dashboard from './pages/Dashboard';
+import ForgotPassword from './pages/auth/ForgotPassword';
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
-import ForgotPassword from './pages/auth/ForgotPassword';
 import ResetPassword from './pages/auth/ResetPassword';
-import Profile from './pages/Profile';
+import Dashboard from './pages/Dashboard';
 import NotFound from './pages/NotFound';
+import Profile from './pages/Profile';
 
 // Ticket Pages
-import TicketList from './pages/tickets/TicketList';
 import TicketCreate from './pages/tickets/TicketCreate';
 import TicketDetail from './pages/tickets/TicketDetail';
+import TicketList from './pages/tickets/TicketList';
 
 // Change Pages
-import ChangeList from './pages/changes/ChangeList';
 import ChangeCreate from './pages/changes/ChangeCreate';
 import ChangeDetail from './pages/changes/ChangeDetail';
+import ChangeList from './pages/changes/ChangeList';
 
 // Knowledge Pages
-import KnowledgeList from './pages/knowledge/KnowledgeList';
 import KnowledgeCreate from './pages/knowledge/KnowledgeCreate';
 import KnowledgeDetail from './pages/knowledge/KnowledgeDetail';
+import KnowledgeList from './pages/knowledge/KnowledgeList';
 
 // Solution Pages
-import SolutionList from './pages/solutions/SolutionList';
 import SolutionCreate from './pages/solutions/SolutionCreate';
 import SolutionDetail from './pages/solutions/SolutionDetail';
+import SolutionEdit from './pages/solutions/SolutionEdit';
+import SolutionList from './pages/solutions/SolutionList';
 
 // Admin Pages
-import UserList from './pages/admin/UserList';
+import Settings from './pages/admin/Settings';
 import UserCreate from './pages/admin/UserCreate';
 import UserEdit from './pages/admin/UserEdit';
-import Settings from './pages/admin/Settings';
+import UserList from './pages/admin/UserList';
 
 // Import permission utilities
-import { hasRole, getAccessDeniedMessage } from './utils/permissions';
 import PermissionGuard from './components/common/PermissionGuard';
+import { getAccessDeniedMessage, hasRole } from './utils/permissions';
 
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles = [], requiredPermission = null }) => {
@@ -217,6 +218,14 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={['editor', 'admin', 'enterprise_admin']}>
                 <SolutionDetail />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="solutions/edit/:id"
+            element={
+              <ProtectedRoute allowedRoles={['editor', 'admin', 'enterprise_admin']}>
+                <SolutionEdit />
               </ProtectedRoute>
             }
           />

@@ -1,32 +1,33 @@
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
 import {
-  Box,
-  Typography,
-  Paper,
-  Grid,
-  Chip,
-  Button,
-  Divider,
-  TextField,
-  CircularProgress,
-  Alert,
-  Avatar,
-  List,
-  ListItem,
-  ListItemAvatar,
-  ListItemText,
-  IconButton,
-} from '@mui/material';
-import {
-  ArrowBack as ArrowBackIcon,
-  Edit as EditIcon,
-  ThumbUp as ThumbUpIcon,
-  ThumbDown as ThumbDownIcon,
-  Send as SendIcon,
-  AttachFile as AttachFileIcon,
+    ArrowBack as ArrowBackIcon,
+    AttachFile as AttachFileIcon,
+    Edit as EditIcon,
+    Send as SendIcon,
+    ThumbDown as ThumbDownIcon,
+    ThumbUp as ThumbUpIcon,
 } from '@mui/icons-material';
+import {
+    Alert,
+    Avatar,
+    Box,
+    Button,
+    Chip,
+    CircularProgress,
+    Divider,
+    Grid,
+    IconButton,
+    List,
+    ListItem,
+    ListItemAvatar,
+    ListItemText,
+    Paper,
+    TextField,
+    Typography,
+} from '@mui/material';
+import { useEffect, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
+import { useNavigate, useParams } from 'react-router-dom';
+import FileUpload from '../../components/knowledge/FileUpload';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
 import { hasPermission } from '../../utils/permissions';
@@ -187,11 +188,20 @@ const KnowledgeDetail = () => {
 
   const isAdmin = user.role === 'admin' || user.role === 'enterprise_admin';
   const isEditor = user.role === 'editor';
-  const isAuthor = article.author._id === user._id;
+
+  // Handle the case when author is just an ID string or null
+  const authorId = typeof article.author === 'object' && article.author ?
+    article.author._id :
+    (article.author || '');
+
+  const isAuthor = authorId && authorId === user._id;
   const canEdit = isAdmin || isEditor || (isAuthor && hasPermission(user, 'update_knowledge'));
 
   // Check if user has already voted
-  const userVote = article.votes?.voters?.find(voter => voter.user === user._id)?.vote;
+  const userVote = article.votes?.voters?.find(voter =>
+    voter?.user === user._id ||
+    (typeof voter?.user === 'object' && voter?.user?._id === user._id)
+  )?.vote;
 
   return (
     <Box>
@@ -226,7 +236,7 @@ const KnowledgeDetail = () => {
                 color="primary"
                 variant="outlined"
               />
-              {isStaffOrAdmin && (
+              {(isAdmin || isEditor) && (
                 <Chip
                   label={article.status.charAt(0).toUpperCase() + article.status.slice(1)}
                   color={statusColors[article.status] || 'default'}
@@ -244,11 +254,15 @@ const KnowledgeDetail = () => {
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
                 <Avatar sx={{ mr: 1 }}>
-                  {article.author.name.charAt(0)}
+                  {typeof article.author === 'object' && article.author?.name
+                    ? article.author.name.charAt(0)
+                    : 'U'}
                 </Avatar>
                 <Box>
                   <Typography variant="subtitle2">
-                    {article.author.name}
+                    {typeof article.author === 'object' && article.author?.name
+                      ? article.author.name
+                      : 'Unknown Author'}
                   </Typography>
                   <Typography variant="caption" color="textSecondary">
                     {formatDate(article.createdAt)}
@@ -286,15 +300,27 @@ const KnowledgeDetail = () => {
               <ReactMarkdown>{article.content}</ReactMarkdown>
             </Box>
 
+            <Divider sx={{ my: 3 }} />
+
+            {/* File Upload Section */}
+            {canEdit && (
+              <Box sx={{ mb: 4 }}>
+                <FileUpload
+                  articleId={article._id}
+                  onUploadSuccess={(updatedArticle) => setArticle(updatedArticle)}
+                />
+              </Box>
+            )}
+
+            {/* Attachments Section */}
             {article.attachments && article.attachments.length > 0 && (
               <>
-                <Divider sx={{ my: 3 }} />
                 <Typography variant="h6" gutterBottom>
                   Attachments
                 </Typography>
                 <List>
-                  {article.attachments.map((attachment) => (
-                    <ListItem key={attachment._id}>
+                  {article.attachments.map((attachment, index) => (
+                    <ListItem key={index}>
                       <ListItemAvatar>
                         <Avatar>
                           <AttachFileIcon />
@@ -302,9 +328,16 @@ const KnowledgeDetail = () => {
                       </ListItemAvatar>
                       <ListItemText
                         primary={attachment.name}
-                        secondary={`Uploaded on ${formatDate(attachment.uploadedAt)}`}
+                        secondary={`Uploaded on ${formatDate(attachment.uploadedAt || article.createdAt)}`}
                       />
-                      <Button variant="outlined" size="small">
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        component="a"
+                        href={`http://localhost:9999${attachment.path}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
                         Download
                       </Button>
                     </ListItem>
@@ -321,21 +354,25 @@ const KnowledgeDetail = () => {
 
             {article.comments && article.comments.length > 0 ? (
               <List>
-                {article.comments.map((comment) => (
-                  <ListItem key={comment._id} alignItems="flex-start" sx={{ px: 0 }}>
+                {article.comments.map((comment, index) => (
+                  <ListItem key={comment?._id || index} alignItems="flex-start" sx={{ px: 0 }}>
                     <ListItemAvatar>
                       <Avatar>
-                        {comment.user.name.charAt(0)}
+                        {typeof comment?.user === 'object' && comment?.user?.name
+                          ? comment.user.name.charAt(0)
+                          : 'U'}
                       </Avatar>
                     </ListItemAvatar>
                     <ListItemText
                       primary={
                         <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                           <Typography variant="subtitle2">
-                            {comment.user.name}
+                            {typeof comment?.user === 'object' && comment?.user?.name
+                              ? comment.user.name
+                              : 'Unknown User'}
                           </Typography>
                           <Typography variant="caption" color="textSecondary">
-                            {formatDate(comment.createdAt)}
+                            {formatDate(comment?.createdAt || new Date())}
                           </Typography>
                         </Box>
                       }
@@ -345,7 +382,7 @@ const KnowledgeDetail = () => {
                           color="textPrimary"
                           sx={{ mt: 1, whiteSpace: 'pre-wrap' }}
                         >
-                          {comment.text}
+                          {comment?.text || ''}
                         </Typography>
                       }
                     />

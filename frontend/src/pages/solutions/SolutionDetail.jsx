@@ -1,29 +1,29 @@
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
 import {
-  Box,
-  Typography,
-  Paper,
-  Grid,
-  Chip,
-  Button,
-  Divider,
-  TextField,
-  CircularProgress,
-  Alert,
-  Avatar,
-  List,
-  ListItem,
-  ListItemAvatar,
-  ListItemText,
-} from '@mui/material';
-import {
-  ArrowBack as ArrowBackIcon,
-  Edit as EditIcon,
-  Send as SendIcon,
-  AttachFile as AttachFileIcon,
+    ArrowBack as ArrowBackIcon,
+    AttachFile as AttachFileIcon,
+    Edit as EditIcon,
+    Send as SendIcon,
 } from '@mui/icons-material';
+import {
+    Alert,
+    Avatar,
+    Box,
+    Button,
+    Chip,
+    CircularProgress,
+    Divider,
+    Grid,
+    List,
+    ListItem,
+    ListItemAvatar,
+    ListItemText,
+    Paper,
+    TextField,
+    Typography,
+} from '@mui/material';
+import { useEffect, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
+import { Link as RouterLink, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
 
@@ -38,18 +38,18 @@ const SolutionDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  
+
   const [solution, setSolution] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [commentText, setCommentText] = useState('');
   const [addingComment, setAddingComment] = useState(false);
-  
+
   const fetchSolution = async () => {
     try {
       setLoading(true);
       const res = await api.get(`/solutions/${id}`);
-      
+
       if (res.data.success) {
         setSolution(res.data.data);
       }
@@ -71,10 +71,10 @@ const SolutionDetail = () => {
 
   const handleAddComment = async () => {
     if (!commentText.trim()) return;
-    
+
     try {
       setAddingComment(true);
-      
+
       // In a real app, you would have an API endpoint for adding comments
       // For now, we'll simulate it by updating the solution with a new comment
       const updatedComments = [
@@ -89,11 +89,11 @@ const SolutionDetail = () => {
           createdAt: new Date().toISOString(),
         },
       ];
-      
+
       const res = await api.put(`/solutions/${id}`, {
         comments: updatedComments,
       });
-      
+
       if (res.data.success) {
         setSolution(res.data.data);
         setCommentText('');
@@ -155,7 +155,11 @@ const SolutionDetail = () => {
   }
 
   const isAdmin = user.role === 'admin';
-  const isAuthor = solution.author._id === user._id;
+  // Handle the case when author is just an ID string or null
+  const authorId = typeof solution.author === 'object' && solution.author ?
+    solution.author._id :
+    (solution.author || '');
+  const isAuthor = authorId && authorId === user._id;
   const canEdit = isAdmin || isAuthor;
 
   return (
@@ -175,8 +179,8 @@ const SolutionDetail = () => {
               <Typography variant="h4">{solution.title}</Typography>
               {canEdit && (
                 <Button
-                  component="a"
-                  href={`/dashboard/solutions/edit/${solution._id}`}
+                  component={RouterLink}
+                  to={`/dashboard/solutions/edit/${solution._id}`}
                   variant="outlined"
                   startIcon={<EditIcon />}
                 >
@@ -184,7 +188,7 @@ const SolutionDetail = () => {
                 </Button>
               )}
             </Box>
-            
+
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 3 }}>
               <Chip
                 label={solution.category.charAt(0).toUpperCase() + solution.category.slice(1)}
@@ -199,23 +203,27 @@ const SolutionDetail = () => {
                 <Chip key={tag} label={tag} size="small" />
               ))}
             </Box>
-            
+
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
               <Avatar sx={{ mr: 1 }}>
-                {solution.author.name.charAt(0)}
+                {typeof solution.author === 'object' && solution.author?.name
+                  ? solution.author.name.charAt(0)
+                  : 'U'}
               </Avatar>
               <Box>
                 <Typography variant="subtitle2">
-                  {solution.author.name}
+                  {typeof solution.author === 'object' && solution.author?.name
+                    ? solution.author.name
+                    : 'Unknown Author'}
                 </Typography>
                 <Typography variant="caption" color="textSecondary">
                   {formatDate(solution.createdAt)}
                 </Typography>
               </Box>
             </Box>
-            
+
             <Divider sx={{ mb: 3 }} />
-            
+
             <Box sx={{ mb: 4 }}>
               <ReactMarkdown>{solution.content}</ReactMarkdown>
             </Box>
@@ -238,7 +246,14 @@ const SolutionDetail = () => {
                         primary={attachment.name}
                         secondary={`Uploaded on ${formatDate(attachment.uploadedAt)}`}
                       />
-                      <Button variant="outlined" size="small">
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        component="a"
+                        href={`http://localhost:9999${attachment.path}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
                         Download
                       </Button>
                     </ListItem>
@@ -248,7 +263,7 @@ const SolutionDetail = () => {
             )}
 
             <Divider sx={{ my: 3 }} />
-            
+
             <Typography variant="h6" gutterBottom>
               Comments
             </Typography>
@@ -259,17 +274,21 @@ const SolutionDetail = () => {
                   <ListItem key={comment._id} alignItems="flex-start" sx={{ px: 0 }}>
                     <ListItemAvatar>
                       <Avatar>
-                        {comment.user.name.charAt(0)}
+                        {typeof comment.user === 'object' && comment.user?.name
+                          ? comment.user.name.charAt(0)
+                          : 'U'}
                       </Avatar>
                     </ListItemAvatar>
                     <ListItemText
                       primary={
                         <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                           <Typography variant="subtitle2">
-                            {comment.user.name}
+                            {typeof comment.user === 'object' && comment.user?.name
+                              ? comment.user.name
+                              : 'Unknown User'}
                           </Typography>
                           <Typography variant="caption" color="textSecondary">
-                            {formatDate(comment.createdAt)}
+                            {formatDate(comment.createdAt || new Date())}
                           </Typography>
                         </Box>
                       }
