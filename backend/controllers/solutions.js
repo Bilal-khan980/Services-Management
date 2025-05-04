@@ -58,10 +58,12 @@ exports.updateSolution = asyncHandler(async (req, res, next) => {
     );
   }
 
-  // Make sure user is solution author or admin
+  // Make sure user is solution author, editor, or admin
   if (
     solution.author.toString() !== req.user.id &&
-    req.user.role !== 'admin'
+    req.user.role !== 'admin' &&
+    req.user.role !== 'enterprise_admin' &&
+    req.user.role !== 'editor'
   ) {
     return next(
       new ErrorResponse(
@@ -114,10 +116,12 @@ exports.solutionAttachmentUpload = asyncHandler(async (req, res, next) => {
     );
   }
 
-  // Make sure user is solution author or admin
+  // Make sure user is solution author, editor, or admin
   if (
     solution.author.toString() !== req.user.id &&
-    req.user.role !== 'admin'
+    req.user.role !== 'admin' &&
+    req.user.role !== 'enterprise_admin' &&
+    req.user.role !== 'editor'
   ) {
     return next(
       new ErrorResponse(

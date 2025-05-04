@@ -116,6 +116,17 @@ const UserList = () => {
   const handleDeleteConfirm = async () => {
     if (!userToDelete) return;
 
+    // Prevent admin users from deleting other admins or enterprise admins
+    // Enterprise admins can delete any user
+    if (user.role === 'admin' &&
+        (userToDelete.role === 'admin' || userToDelete.role === 'enterprise_admin')) {
+      setError('Admin users cannot delete other Admin or Enterprise Admin users');
+      setDeleteDialogOpen(false);
+      setUserToDelete(null);
+      setDeleting(false);
+      return;
+    }
+
     try {
       setDeleting(true);
       await api.delete(`/users/${userToDelete._id}`);
@@ -229,6 +240,20 @@ const UserList = () => {
                             color="primary"
                             size="small"
                             sx={{ mr: 1 }}
+                            disabled={
+                              // Disable editing for admin users when viewing other admins or enterprise admins
+                              // Enterprise admins can edit any user
+                              user.role === 'admin' &&
+                              (userData.role === 'admin' || userData.role === 'enterprise_admin') &&
+                              userData._id !== user._id
+                            }
+                            title={
+                              user.role === 'admin' &&
+                              (userData.role === 'admin' || userData.role === 'enterprise_admin') &&
+                              userData._id !== user._id
+                                ? "Admin users cannot edit other admins or enterprise admins"
+                                : "Edit user"
+                            }
                           >
                             <EditIcon fontSize="small" />
                           </IconButton>
@@ -236,7 +261,20 @@ const UserList = () => {
                             color="error"
                             size="small"
                             onClick={() => handleDeleteClick(userData)}
-                            disabled={userData._id === user._id} // Prevent deleting yourself
+                            disabled={
+                              userData._id === user._id || // Prevent deleting yourself
+                              (user.role === 'admin' &&
+                               (userData.role === 'admin' || userData.role === 'enterprise_admin')) // Prevent admin from deleting other admins or enterprise admins
+                              // Enterprise admins can delete any user except themselves
+                            }
+                            title={
+                              userData._id === user._id ?
+                                "You cannot delete your own account" :
+                              (user.role === 'admin' &&
+                               (userData.role === 'admin' || userData.role === 'enterprise_admin')) ?
+                                "Admin users cannot delete other Admin or Enterprise Admin users" :
+                                "Delete user"
+                            }
                           >
                             <DeleteIcon fontSize="small" />
                           </IconButton>

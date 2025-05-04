@@ -73,6 +73,14 @@ const UserEdit = () => {
     fetchUser();
   }, [id]);
 
+  // Check if current admin user is trying to edit another admin or enterprise admin
+  // Enterprise admins can edit any user
+  const cannotEditUser =
+    currentUser.role === 'admin' &&
+    userData &&
+    (userData.role === 'admin' || userData.role === 'enterprise_admin') &&
+    userData._id !== currentUser._id;
+
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -101,6 +109,24 @@ const UserEdit = () => {
       setUpdating(true);
       setError('');
 
+      // Prevent admin users from editing other admins or enterprise admins
+      // Enterprise admins can edit any user
+      if (cannotEditUser) {
+        setError('Admin users cannot edit other Admin or Enterprise Admin users');
+        setUpdating(false);
+        return;
+      }
+
+      // Prevent admin users from changing roles to admin, staff, or enterprise_admin
+      // Enterprise admins can assign any role
+      if (currentUser.role !== 'enterprise_admin' &&
+          userData.role !== formData.role &&
+          (formData.role === 'admin' || formData.role === 'staff' || formData.role === 'enterprise_admin')) {
+        setError('You do not have permission to assign this role. Only Enterprise Admins can assign Admin, Staff, or Enterprise Admin roles.');
+        setUpdating(false);
+        return;
+      }
+
       const res = await api.put(`/users/${id}`, formData);
 
       if (res.data.success) {
@@ -117,6 +143,13 @@ const UserEdit = () => {
 
   const handlePasswordSubmit = async (e) => {
     e.preventDefault();
+
+    // Prevent admin users from resetting passwords for other admins or enterprise admins
+    // Enterprise admins can reset any user's password
+    if (cannotEditUser) {
+      setPasswordError('Admin users cannot reset passwords for other Admin or Enterprise Admin users');
+      return;
+    }
 
     if (!passwordData.password) {
       setPasswordError('Password is required');
@@ -222,6 +255,12 @@ const UserEdit = () => {
               </Alert>
             )}
 
+            {cannotEditUser && (
+              <Alert severity="warning" sx={{ mb: 3 }}>
+                As an Admin, you cannot edit other Admin or Enterprise Admin users. You can only view their information.
+              </Alert>
+            )}
+
             <Box component="form" onSubmit={handleSubmit}>
               <Grid container spacing={3}>
                 <Grid item xs={12}>
@@ -232,6 +271,7 @@ const UserEdit = () => {
                     name="name"
                     value={formData.name}
                     onChange={handleChange}
+                    disabled={cannotEditUser}
                   />
                 </Grid>
 
@@ -244,6 +284,7 @@ const UserEdit = () => {
                     type="email"
                     value={formData.email}
                     onChange={handleChange}
+                    disabled={cannotEditUser}
                   />
                 </Grid>
 
@@ -256,15 +297,27 @@ const UserEdit = () => {
                     name="role"
                     value={formData.role}
                     onChange={handleChange}
-                    disabled={isSelfEdit} // Prevent changing your own role
-                    helperText={isSelfEdit ? "You cannot change your own role" : ""}
+                    disabled={isSelfEdit || cannotEditUser} // Prevent changing your own role or other admin/enterprise roles
+                    helperText={isSelfEdit ? "You cannot change your own role" :
+                               cannotEditUser ? "Admin users cannot edit other Admin or Enterprise Admin users" :
+                               (currentUser.role !== 'enterprise_admin' &&
+                                (formData.role === 'admin' || formData.role === 'staff' || formData.role === 'enterprise_admin')) ?
+                                "You cannot change this user's role as it requires enterprise admin privileges" : ""}
                   >
                     <MenuItem value="user">User</MenuItem>
                     <MenuItem value="editor">Editor/Knowledge Manager</MenuItem>
-                    <MenuItem value="staff">Staff</MenuItem>
-                    <MenuItem value="admin">Admin</MenuItem>
+
+                    {/* Only show staff and admin options if current user is enterprise_admin or if the user being edited already has that role */}
+                    {(currentUser.role === 'enterprise_admin' || formData.role === 'staff') && (
+                      <MenuItem value="staff">Staff</MenuItem>
+                    )}
+
+                    {(currentUser.role === 'enterprise_admin' || formData.role === 'admin') && (
+                      <MenuItem value="admin">Admin</MenuItem>
+                    )}
+
                     {/* Only enterprise_admin can assign enterprise_admin role */}
-                    {currentUser.role === 'enterprise_admin' && (
+                    {(currentUser.role === 'enterprise_admin' || formData.role === 'enterprise_admin') && (
                       <MenuItem value="enterprise_admin">Enterprise Admin</MenuItem>
                     )}
                   </TextField>
@@ -276,7 +329,7 @@ const UserEdit = () => {
                       type="submit"
                       variant="contained"
                       startIcon={updating ? <CircularProgress size={20} /> : <SaveIcon />}
-                      disabled={updating}
+                      disabled={updating || cannotEditUser}
                     >
                       Update User
                     </Button>
@@ -305,6 +358,12 @@ const UserEdit = () => {
               </Alert>
             )}
 
+            {cannotEditUser && (
+              <Alert severity="warning" sx={{ mb: 3 }}>
+                As an Admin, you cannot reset passwords for other Admin or Enterprise Admin users.
+              </Alert>
+            )}
+
             <Box component="form" onSubmit={handlePasswordSubmit}>
               <Grid container spacing={3}>
                 <Grid item xs={12}>
@@ -316,6 +375,7 @@ const UserEdit = () => {
                     type={showPassword ? 'text' : 'password'}
                     value={passwordData.password}
                     onChange={handlePasswordChange}
+                    disabled={cannotEditUser}
                     InputProps={{
                       endAdornment: (
                         <InputAdornment position="end">
@@ -323,6 +383,7 @@ const UserEdit = () => {
                             aria-label="toggle password visibility"
                             onClick={toggleShowPassword}
                             edge="end"
+                            disabled={cannotEditUser}
                           >
                             {showPassword ? <VisibilityOff /> : <Visibility />}
                           </IconButton>
@@ -339,7 +400,7 @@ const UserEdit = () => {
                       variant="contained"
                       color="secondary"
                       startIcon={updatingPassword ? <CircularProgress size={20} /> : <SaveIcon />}
-                      disabled={updatingPassword}
+                      disabled={updatingPassword || cannotEditUser}
                     >
                       Reset Password
                     </Button>

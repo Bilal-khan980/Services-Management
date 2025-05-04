@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -20,7 +20,9 @@ import api from '../../services/api';
 const KnowledgeCreate = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  
+  const { id } = useParams(); // Get the ID from the URL if editing
+  const isEditMode = !!id; // Check if we're in edit mode
+
   const [formData, setFormData] = useState({
     title: '',
     content: '',
@@ -29,10 +31,43 @@ const KnowledgeCreate = () => {
     status: 'draft',
     tags: [],
   });
-  
+
   const [tagInput, setTagInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [fetchLoading, setFetchLoading] = useState(isEditMode); // Only set loading if in edit mode
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  // Fetch article data if in edit mode
+  useEffect(() => {
+    const fetchArticle = async () => {
+      if (!isEditMode) return; // Skip if not in edit mode
+
+      try {
+        setFetchLoading(true);
+        const res = await api.get(`/knowledge/${id}`);
+
+        if (res.data.success) {
+          const article = res.data.data;
+          setFormData({
+            title: article.title || '',
+            content: article.content || '',
+            category: article.category || 'how-to',
+            visibility: article.visibility || 'public',
+            status: article.status || 'draft',
+            tags: article.tags || [],
+          });
+        }
+      } catch (err) {
+        setError(err.response?.data?.error || 'Failed to fetch article');
+        console.error(err);
+      } finally {
+        setFetchLoading(false);
+      }
+    };
+
+    fetchArticle();
+  }, [id, isEditMode]);
 
   const handleChange = (e) => {
     setFormData({
@@ -71,16 +106,33 @@ const KnowledgeCreate = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     try {
       setLoading(true);
-      const res = await api.post('/knowledge', formData);
-      
-      if (res.data.success) {
-        navigate(`/dashboard/knowledge/${res.data.data._id}`);
+      setError('');
+      setSuccess('');
+
+      let res;
+
+      if (isEditMode) {
+        // Update existing article
+        res = await api.put(`/knowledge/${id}`, formData);
+        if (res.data.success) {
+          setSuccess('Article updated successfully');
+          // Wait a moment to show the success message before navigating
+          setTimeout(() => {
+            navigate(`/dashboard/knowledge/${id}`);
+          }, 1500);
+        }
+      } else {
+        // Create new article
+        res = await api.post('/knowledge', formData);
+        if (res.data.success) {
+          navigate(`/dashboard/knowledge/${res.data.data._id}`);
+        }
       }
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to create article');
+      setError(err.response?.data?.error || (isEditMode ? 'Failed to update article' : 'Failed to create article'));
       console.error(err);
     } finally {
       setLoading(false);
@@ -89,17 +141,31 @@ const KnowledgeCreate = () => {
 
   return (
     <Box>
-      <Typography variant="h4" gutterBottom>
-        Create Knowledge Article
-      </Typography>
-      <Typography variant="subtitle1" color="textSecondary" gutterBottom>
-        Share your knowledge with the team
-      </Typography>
+      {fetchLoading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', p: 5 }}>
+          <CircularProgress />
+        </Box>
+      ) : (
+        <>
+          <Typography variant="h4" gutterBottom>
+            {isEditMode ? 'Edit Knowledge Article' : 'Create Knowledge Article'}
+          </Typography>
+          <Typography variant="subtitle1" color="textSecondary" gutterBottom>
+            {isEditMode ? 'Update your knowledge article' : 'Share your knowledge with the team'}
+          </Typography>
 
-      {error && (
-        <Alert severity="error" sx={{ mb: 3 }}>
-          {error}
-        </Alert>
+          {error && (
+            <Alert severity="error" sx={{ mb: 3 }}>
+              {error}
+            </Alert>
+          )}
+
+          {success && (
+            <Alert severity="success" sx={{ mb: 3 }}>
+              {success}
+            </Alert>
+          )}
+        </>
       )}
 
       <Paper sx={{ p: 3, mt: 3 }}>
@@ -116,7 +182,7 @@ const KnowledgeCreate = () => {
                 placeholder="Article title"
               />
             </Grid>
-            
+
             <Grid item xs={12} sm={4}>
               <TextField
                 select
@@ -136,7 +202,7 @@ const KnowledgeCreate = () => {
                 <MenuItem value="other">Other</MenuItem>
               </TextField>
             </Grid>
-            
+
             <Grid item xs={12} sm={4}>
               <TextField
                 select
@@ -152,7 +218,7 @@ const KnowledgeCreate = () => {
                 <MenuItem value="private">Private (Only You)</MenuItem>
               </TextField>
             </Grid>
-            
+
             <Grid item xs={12} sm={4}>
               <TextField
                 select
@@ -167,7 +233,7 @@ const KnowledgeCreate = () => {
                 <MenuItem value="published">Published</MenuItem>
               </TextField>
             </Grid>
-            
+
             <Grid item xs={12}>
               <TextField
                 fullWidth
@@ -199,7 +265,7 @@ const KnowledgeCreate = () => {
                 ))}
               </Box>
             </Grid>
-            
+
             <Grid item xs={12}>
               <TextField
                 required
@@ -213,14 +279,14 @@ const KnowledgeCreate = () => {
                 placeholder="Write your article content here. You can use markdown formatting."
               />
             </Grid>
-            
+
             <Grid item xs={12}>
               <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
                 <Button
                   type="button"
                   variant="outlined"
                   sx={{ mr: 2 }}
-                  onClick={() => navigate('/dashboard/knowledge')}
+                  onClick={() => isEditMode ? navigate(`/dashboard/knowledge/${id}`) : navigate('/dashboard/knowledge')}
                   disabled={loading}
                 >
                   Cancel
@@ -231,7 +297,9 @@ const KnowledgeCreate = () => {
                   startIcon={loading ? <CircularProgress size={20} /> : <SendIcon />}
                   disabled={loading}
                 >
-                  {formData.status === 'draft' ? 'Save as Draft' : 'Publish Article'}
+                  {isEditMode
+                    ? (formData.status === 'draft' ? 'Save Changes as Draft' : 'Update Published Article')
+                    : (formData.status === 'draft' ? 'Save as Draft' : 'Publish Article')}
                 </Button>
               </Box>
             </Grid>

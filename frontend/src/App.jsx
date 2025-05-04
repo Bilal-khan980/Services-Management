@@ -183,7 +183,7 @@ function App() {
           <Route
             path="knowledge/create"
             element={
-              <ProtectedRoute allowedRoles={['editor', 'admin', 'enterprise_admin']}>
+              <ProtectedRoute allowedRoles={['editor', 'enterprise_admin']}>
                 <ErrorBoundary>
                   <KnowledgeCreate />
                 </ErrorBoundary>
@@ -195,12 +195,22 @@ function App() {
               <KnowledgeDetail />
             </ErrorBoundary>
           } />
+          <Route
+            path="knowledge/edit/:id"
+            element={
+              <ProtectedRoute allowedRoles={['editor', 'enterprise_admin']}>
+                <ErrorBoundary>
+                  <KnowledgeCreate />
+                </ErrorBoundary>
+              </ProtectedRoute>
+            }
+          />
 
           {/* Solution Routes */}
           <Route
             path="solutions"
             element={
-              <ProtectedRoute allowedRoles={['editor', 'admin', 'enterprise_admin']}>
+              <ProtectedRoute allowedRoles={['editor', 'enterprise_admin']}>
                 <SolutionList />
               </ProtectedRoute>
             }
@@ -208,7 +218,7 @@ function App() {
           <Route
             path="solutions/create"
             element={
-              <ProtectedRoute allowedRoles={['editor', 'admin', 'enterprise_admin']}>
+              <ProtectedRoute allowedRoles={['editor', 'enterprise_admin']}>
                 <SolutionCreate />
               </ProtectedRoute>
             }
@@ -216,7 +226,7 @@ function App() {
           <Route
             path="solutions/:id"
             element={
-              <ProtectedRoute allowedRoles={['editor', 'admin', 'enterprise_admin']}>
+              <ProtectedRoute allowedRoles={['editor', 'enterprise_admin']}>
                 <SolutionDetail />
               </ProtectedRoute>
             }
@@ -224,7 +234,7 @@ function App() {
           <Route
             path="solutions/edit/:id"
             element={
-              <ProtectedRoute allowedRoles={['editor', 'admin', 'enterprise_admin']}>
+              <ProtectedRoute allowedRoles={['editor', 'enterprise_admin']}>
                 <SolutionEdit />
               </ProtectedRoute>
             }

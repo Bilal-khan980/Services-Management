@@ -19,6 +19,7 @@ import api from '../../services/api';
 
 const UserCreate = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [formData, setFormData] = useState({
     name: '',
@@ -81,6 +82,15 @@ const UserCreate = () => {
     e.preventDefault();
 
     if (!validateForm()) {
+      return;
+    }
+
+    // Current user's role is already available from useAuth() at the top
+
+    // Prevent admin users from creating admin, staff, or enterprise_admin users
+    if (user.role !== 'enterprise_admin' &&
+        (formData.role === 'admin' || formData.role === 'staff' || formData.role === 'enterprise_admin')) {
+      setError('You do not have permission to create users with this role. Only Enterprise Admins can create Admin, Staff, or Enterprise Admin users.');
       return;
     }
 
@@ -187,11 +197,13 @@ const UserCreate = () => {
               >
                 <MenuItem value="user">User</MenuItem>
                 <MenuItem value="editor">Editor/Knowledge Manager</MenuItem>
-                <MenuItem value="staff">Staff</MenuItem>
-                <MenuItem value="admin">Admin</MenuItem>
-                {/* Only enterprise_admin can create another enterprise_admin */}
-                {useAuth().user?.role === 'enterprise_admin' && (
-                  <MenuItem value="enterprise_admin">Enterprise Admin</MenuItem>
+                {/* Only enterprise_admin can create admin, staff, or enterprise_admin users */}
+                {user?.role === 'enterprise_admin' && (
+                  <>
+                    <MenuItem value="staff">Staff</MenuItem>
+                    <MenuItem value="admin">Admin</MenuItem>
+                    <MenuItem value="enterprise_admin">Enterprise Admin</MenuItem>
+                  </>
                 )}
               </TextField>
             </Grid>

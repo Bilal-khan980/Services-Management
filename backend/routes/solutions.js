@@ -17,7 +17,7 @@ const advancedResults = require('../middleware/advancedResults');
 
 router.route('/:id/attachment').put(
   protect,
-  authorize('editor', 'admin', 'enterprise_admin'),
+  authorize('editor', 'enterprise_admin'),
   solutionAttachmentUpload
 );
 
@@ -25,16 +25,16 @@ router
   .route('/')
   .get(
     protect,
-    authorize('editor', 'admin', 'enterprise_admin'),
+    authorize('editor', 'enterprise_admin'),
     advancedResults(Solution, { path: 'author', select: 'name email' }),
     getSolutions
   )
-  .post(protect, authorize('editor', 'admin', 'enterprise_admin'), createSolution);
+  .post(protect, authorize('editor', 'enterprise_admin'), createSolution);
 
 router
   .route('/:id')
-  .get(protect, authorize('editor', 'admin', 'enterprise_admin'), getSolution)
-  .put(protect, authorize('editor', 'admin', 'enterprise_admin'), updateSolution)
-  .delete(protect, authorize('admin', 'enterprise_admin'), deleteSolution);
+  .get(protect, authorize('editor', 'enterprise_admin'), getSolution)
+  .put(protect, authorize('editor', 'enterprise_admin'), updateSolution)
+  .delete(protect, authorize('enterprise_admin'), deleteSolution);
 
 module.exports = router;

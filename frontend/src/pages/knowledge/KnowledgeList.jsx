@@ -187,7 +187,9 @@ const KnowledgeList = () => {
   };
 
   // Only check permissions if user object is valid
-  const canCreateKnowledge = user && user.role ? hasPermission(user, 'create_knowledge') : false;
+  // Admin users should not be able to create knowledge articles
+  const canCreateKnowledge = user && user.role ?
+    (user.role !== 'admin' && hasPermission(user, 'create_knowledge')) : false;
 
   // If we're still loading the user data, show a loading indicator
   if (loading && !user) {

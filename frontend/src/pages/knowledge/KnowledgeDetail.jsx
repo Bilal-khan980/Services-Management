@@ -186,7 +186,8 @@ const KnowledgeDetail = () => {
     );
   }
 
-  const isAdmin = user.role === 'admin' || user.role === 'enterprise_admin';
+  const isAdmin = user.role === 'admin';
+  const isEnterpriseAdmin = user.role === 'enterprise_admin';
   const isEditor = user.role === 'editor';
   const isUser = user.role === 'user';
 
@@ -196,10 +197,12 @@ const KnowledgeDetail = () => {
     (article.author || '');
 
   const isAuthor = authorId && authorId === user._id;
-  const canEdit = isAdmin || isEditor || (isAuthor && hasPermission(user, 'update_knowledge'));
+  // Admin users should not be able to edit knowledge articles
+  const canEdit = isEnterpriseAdmin || isEditor || (isAuthor && hasPermission(user, 'update_knowledge'));
 
   // Allow regular users to upload attachments to published articles
-  const canUpload = isAdmin || isEditor || isAuthor || (isUser && article.status === 'published');
+  // Admin users should not be able to upload attachments to knowledge articles
+  const canUpload = !isAdmin && (isEnterpriseAdmin || isEditor || isAuthor || (isUser && article.status === 'published'));
 
   // Check if user has already voted
   const userVote = article.votes?.voters?.find(voter =>

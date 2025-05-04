@@ -116,14 +116,17 @@ const SolutionList = () => {
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h4">Internal Solutions</Typography>
-        <Button
-          component={RouterLink}
-          to="/dashboard/solutions/create"
-          variant="contained"
-          startIcon={<AddIcon />}
-        >
-          Create Solution
-        </Button>
+        {/* Only show create button for editor and enterprise_admin roles */}
+        {user && (user.role === 'editor' || user.role === 'enterprise_admin') && (
+          <Button
+            component={RouterLink}
+            to="/dashboard/solutions/create"
+            variant="contained"
+            startIcon={<AddIcon />}
+          >
+            Create Solution
+          </Button>
+        )}
       </Box>
 
       <Paper sx={{ mb: 3, p: 2 }}>
@@ -228,15 +231,18 @@ const SolutionList = () => {
           <Typography variant="h6" color="textSecondary" gutterBottom>
             No internal solutions found
           </Typography>
-          <Button
-            component={RouterLink}
-            to="/dashboard/solutions/create"
-            variant="contained"
-            startIcon={<AddIcon />}
-            sx={{ mt: 2 }}
-          >
-            Create First Solution
-          </Button>
+          {/* Only show create button for editor and enterprise_admin roles */}
+          {user && (user.role === 'editor' || user.role === 'enterprise_admin') && (
+            <Button
+              component={RouterLink}
+              to="/dashboard/solutions/create"
+              variant="contained"
+              startIcon={<AddIcon />}
+              sx={{ mt: 2 }}
+            >
+              Create First Solution
+            </Button>
+          )}
         </Paper>
       ) : (
         <>

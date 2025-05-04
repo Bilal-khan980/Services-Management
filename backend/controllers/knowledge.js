@@ -193,7 +193,7 @@ exports.knowledgeAttachmentUpload = asyncHandler(async (req, res, next) => {
     );
   }
 
-  // Make sure user is article author, admin, or has appropriate role
+  // Make sure user is article author or has appropriate role
   if (
     article.author.toString() !== req.user.id &&
     req.user.role !== 'admin' &&

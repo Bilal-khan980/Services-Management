@@ -155,12 +155,17 @@ const SolutionDetail = () => {
   }
 
   const isAdmin = user.role === 'admin';
+  const isEnterpriseAdmin = user.role === 'enterprise_admin';
+  const isEditor = user.role === 'editor';
+
   // Handle the case when author is just an ID string or null
   const authorId = typeof solution.author === 'object' && solution.author ?
     solution.author._id :
     (solution.author || '');
   const isAuthor = authorId && authorId === user._id;
-  const canEdit = isAdmin || isAuthor;
+
+  // Editors and enterprise admins can edit all solutions, authors can edit their own
+  const canEdit = isEnterpriseAdmin || isEditor || isAuthor;
 
   return (
     <Box>

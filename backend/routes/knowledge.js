@@ -21,7 +21,7 @@ router.route('/suggest').get(protect, getSuggestedArticles);
 
 router.route('/:id/attachment').put(
   protect,
-  authorize('editor', 'admin', 'enterprise_admin', 'user'),
+  authorize('editor', 'enterprise_admin', 'user'), // Admin users are not allowed to upload attachments
   knowledgeAttachmentUpload
 );
 
@@ -34,12 +34,12 @@ router
     advancedResults(Knowledge, { path: 'author', select: 'name email' }),
     getKnowledgeArticles
   )
-  .post(protect, authorize('editor', 'admin', 'enterprise_admin'), createKnowledgeArticle);
+  .post(protect, authorize('editor', 'enterprise_admin'), createKnowledgeArticle);
 
 router
   .route('/:id')
   .get(protect, getKnowledgeArticle)
-  .put(protect, authorize('editor', 'admin', 'enterprise_admin'), updateKnowledgeArticle)
-  .delete(protect, authorize('admin', 'enterprise_admin'), deleteKnowledgeArticle);
+  .put(protect, authorize('editor', 'enterprise_admin'), updateKnowledgeArticle)
+  .delete(protect, authorize('enterprise_admin'), deleteKnowledgeArticle);
 
 module.exports = router;
