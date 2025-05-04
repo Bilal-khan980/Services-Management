@@ -188,6 +188,7 @@ const KnowledgeDetail = () => {
 
   const isAdmin = user.role === 'admin' || user.role === 'enterprise_admin';
   const isEditor = user.role === 'editor';
+  const isUser = user.role === 'user';
 
   // Handle the case when author is just an ID string or null
   const authorId = typeof article.author === 'object' && article.author ?
@@ -196,6 +197,9 @@ const KnowledgeDetail = () => {
 
   const isAuthor = authorId && authorId === user._id;
   const canEdit = isAdmin || isEditor || (isAuthor && hasPermission(user, 'update_knowledge'));
+
+  // Allow regular users to upload attachments to published articles
+  const canUpload = isAdmin || isEditor || isAuthor || (isUser && article.status === 'published');
 
   // Check if user has already voted
   const userVote = article.votes?.voters?.find(voter =>
@@ -303,7 +307,7 @@ const KnowledgeDetail = () => {
             <Divider sx={{ my: 3 }} />
 
             {/* File Upload Section */}
-            {canEdit && (
+            {canUpload && (
               <Box sx={{ mb: 4 }}>
                 <FileUpload
                   articleId={article._id}

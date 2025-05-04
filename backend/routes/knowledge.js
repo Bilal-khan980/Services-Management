@@ -21,7 +21,7 @@ router.route('/suggest').get(protect, getSuggestedArticles);
 
 router.route('/:id/attachment').put(
   protect,
-  authorize('editor', 'admin', 'enterprise_admin'),
+  authorize('editor', 'admin', 'enterprise_admin', 'user'),
   knowledgeAttachmentUpload
 );
 

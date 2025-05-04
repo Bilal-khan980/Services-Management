@@ -193,14 +193,27 @@ exports.knowledgeAttachmentUpload = asyncHandler(async (req, res, next) => {
     );
   }
 
-  // Make sure user is article author or admin
+  // Make sure user is article author, admin, or has appropriate role
   if (
     article.author.toString() !== req.user.id &&
-    req.user.role !== 'admin'
+    req.user.role !== 'admin' &&
+    req.user.role !== 'enterprise_admin' &&
+    req.user.role !== 'editor' &&
+    req.user.role !== 'user'
   ) {
     return next(
       new ErrorResponse(
         `User ${req.user.id} is not authorized to update this article`,
+        401
+      )
+    );
+  }
+
+  // For users with 'user' role, check if the article is published
+  if (req.user.role === 'user' && article.status !== 'published') {
+    return next(
+      new ErrorResponse(
+        `User ${req.user.id} can only upload attachments to published articles`,
         401
       )
     );

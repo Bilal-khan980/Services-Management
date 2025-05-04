@@ -156,6 +156,14 @@ exports.updateChange = asyncHandler(async (req, res, next) => {
   // Get the old change data before updating
   const oldChange = { ...change.toObject() };
 
+  // Handle empty string for assignedTo by converting it to null
+  if (req.body.assignedTo === '') {
+    req.body.assignedTo = null;
+  }
+
+  // Log the update data for debugging
+  console.log('Update data:', req.body);
+
   change = await Change.findByIdAndUpdate(req.params.id, req.body, {
     new: true,
     runValidators: true

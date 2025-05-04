@@ -170,12 +170,20 @@ const ChangeDetail = () => {
         return;
       }
 
+      // Create a copy of editData to modify
       const updateData = {
         ...editData,
         plannedStartDate: editData.plannedStartDate.toISOString(),
         plannedEndDate: editData.plannedEndDate.toISOString(),
       };
 
+      // If assignedTo is an empty string, set it to null
+      // This prevents MongoDB from trying to cast an empty string to ObjectId
+      if (updateData.assignedTo === '') {
+        updateData.assignedTo = null;
+      }
+
+      console.log('Sending update data:', updateData);
       const res = await api.put(`/changes/${id}`, updateData);
 
       if (res.data.success) {
@@ -374,6 +382,7 @@ const ChangeDetail = () => {
 
   const isAdmin = user.role === 'admin' || user.role === 'enterprise_admin';
   const isEditor = user.role === 'editor';
+  const isStaffOrAdmin = isAdmin || isEditor; // Added this line to define isStaffOrAdmin
   const isChangeOwner = change.user._id.toString() === user._id;
   const canEdit = isAdmin ||
                  (isEditor && hasPermission(user, 'update_knowledge')) ||
