@@ -63,6 +63,7 @@ const ChangeDetail = () => {
   const [change, setChange] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState(''); // Added success state
   const [updating, setUpdating] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [addingComment, setAddingComment] = useState(false);
@@ -84,6 +85,7 @@ const ChangeDetail = () => {
     try {
       setLoading(true);
       setError(''); // Clear any previous errors
+      setSuccess(''); // Clear any previous success messages
 
       // Check if id is valid
       if (!id) {
@@ -162,6 +164,7 @@ const ChangeDetail = () => {
   const handleUpdateChange = async () => {
     try {
       setUpdating(true);
+      setError(''); // Clear any previous errors
 
       // Validate ID before making the request
       if (!id || !/^[0-9a-fA-F]{24}$/.test(id)) {
@@ -184,27 +187,61 @@ const ChangeDetail = () => {
       }
 
       console.log('Sending update data:', updateData);
-      const res = await api.put(`/changes/${id}`, updateData);
 
-      if (res.data.success) {
-        setChange(res.data.data);
-        setEditMode(false);
+      try {
+        const res = await api.put(`/changes/${id}`, updateData);
+
+        if (res.data.success) {
+          // Store the updated change data
+          const updatedChange = res.data.data;
+
+          // Update the local state with the updated data
+          setChange(updatedChange);
+
+          // Update the edit data to match the updated change
+          setEditData({
+            status: updatedChange.status,
+            impact: updatedChange.impact,
+            category: updatedChange.category,
+            plannedStartDate: dayjs(updatedChange.plannedStartDate),
+            plannedEndDate: dayjs(updatedChange.plannedEndDate),
+            assignedTo: updatedChange.assignedTo?._id || '',
+          });
+
+          // Exit edit mode
+          setEditMode(false);
+
+          // Show success message
+          setSuccess('Change updated successfully!');
+
+          // Clear success message after 5 seconds
+          setTimeout(() => {
+            setSuccess('');
+          }, 5000);
+
+          console.log('Change updated successfully:', updatedChange);
+        }
+      } catch (apiError) {
+        console.error('API error updating change:', apiError);
+
+        // Handle specific error cases
+        if (apiError.response) {
+          if (apiError.response.status === 400) {
+            setError(apiError.response.data?.error || 'Invalid request');
+          } else if (apiError.response.status === 404) {
+            setError('Change not found');
+          } else {
+            setError(apiError.response?.data?.error || 'Failed to update change');
+          }
+        } else if (apiError.request) {
+          setError('No response from server. Please check your connection.');
+        } else {
+          setError(`Error: ${apiError.message}`);
+        }
       }
     } catch (err) {
-      console.error('Error updating change:', err);
-
-      // Handle specific error cases
-      if (err.response) {
-        if (err.response.status === 400) {
-          setError(err.response.data?.error || 'Invalid request');
-        } else if (err.response.status === 404) {
-          setError('Change not found');
-        } else {
-          setError(err.response?.data?.error || 'Failed to update change');
-        }
-      } else {
-        setError('Failed to update change. Please check your connection.');
-      }
+      console.error('Unexpected error in handleUpdateChange:', err);
+      setError('An unexpected error occurred. Please try again.');
     } finally {
       setUpdating(false);
     }
@@ -403,6 +440,12 @@ const ChangeDetail = () => {
           Back to Changes
         </Button>
 
+        {success && (
+          <Alert severity="success" sx={{ mb: 3 }}>
+            {success}
+          </Alert>
+        )}
+
         <Paper sx={{ p: 3, mb: 3 }}>
           <Grid container spacing={3}>
             <Grid item xs={12}>
@@ -413,7 +456,11 @@ const ChangeDetail = () => {
                 {canEdit && !editMode && (
                   <Button
                     variant="outlined"
-                    onClick={() => setEditMode(true)}
+                    onClick={() => {
+                      setEditMode(true);
+                      setError('');
+                      setSuccess('');
+                    }}
                   >
                     Edit
                   </Button>
@@ -422,7 +469,11 @@ const ChangeDetail = () => {
                   <Box>
                     <Button
                       variant="outlined"
-                      onClick={() => setEditMode(false)}
+                      onClick={() => {
+                        setEditMode(false);
+                        setError('');
+                        setSuccess('');
+                      }}
                       sx={{ mr: 1 }}
                     >
                       Cancel
