@@ -1,21 +1,21 @@
 import {
-    SwapHoriz as ChangeIcon,
-    Book as KnowledgeIcon,
-    Engineering as SolutionIcon,
-    ConfirmationNumber as TicketIcon,
+  SwapHoriz as ChangeIcon,
+  Book as KnowledgeIcon,
+  Engineering as SolutionIcon,
+  ConfirmationNumber as TicketIcon,
 } from '@mui/icons-material';
 import {
-    Alert,
-    Box,
-    Button,
-    Card,
-    CardContent,
-    CircularProgress,
-    Divider,
-    Grid,
-    Paper,
-    Snackbar,
-    Typography,
+  Alert,
+  Box,
+  Button,
+  Card,
+  CardContent,
+  CircularProgress,
+  Divider,
+  Grid,
+  Paper,
+  Snackbar,
+  Typography,
 } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { Link as RouterLink, useLocation } from 'react-router-dom';
@@ -281,7 +281,7 @@ const Dashboard = () => {
         </Grid>
 
         {/* Solutions Card - Only show to users with view_solutions permission */}
-        {hasPermission(user, 'view_solutions') && (
+        {/* {hasPermission(user, 'view_solutions') && (
           <Grid item xs={12} sm={6} md={3}>
             <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
               <CardContent sx={{ flexGrow: 1 }}>
@@ -291,33 +291,11 @@ const Dashboard = () => {
                     alignItems: 'center',
                     mb: 2,
                   }}
-                >
-                  <SolutionIcon color="success" sx={{ fontSize: 40, mr: 2 }} />
-                  <Typography variant="h5">Solutions</Typography>
-                </Box>
-                <Typography variant="h3" component="div">
-                  {stats.solutions.total}
-                </Typography>
-                <Box sx={{ mt: 2, mb: 2 }}>
-                  <Typography variant="body2" color="text.secondary">
-                    Internal solutions for staff
-                  </Typography>
-                </Box>
+                />
               </CardContent>
-              <Box sx={{ p: 2, pt: 0 }}>
-                <Button
-                  component={RouterLink}
-                  to="/dashboard/solutions"
-                  variant="outlined"
-                  size="small"
-                  fullWidth
-                >
-                  View All
-                </Button>
-              </Box>
             </Card>
           </Grid>
-        )}
+        )} */}
 
         {/* Quick Actions */}
         <Grid item xs={12} md={6}>

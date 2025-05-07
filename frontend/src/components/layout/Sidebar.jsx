@@ -1,29 +1,28 @@
-import { useLocation, Link as RouterLink } from 'react-router-dom';
+import {
+  SwapHoriz as ChangeIcon,
+  Dashboard as DashboardIcon,
+  ExpandLess,
+  ExpandMore,
+  Book as KnowledgeIcon,
+  Settings as SettingsIcon,
+  ConfirmationNumber as TicketIcon,
+  People as UserIcon
+} from '@mui/icons-material';
 import {
   Box,
-  Drawer,
-  Toolbar,
-  List,
-  Typography,
+  Collapse,
   Divider,
+  Drawer,
+  List,
   ListItem,
   ListItemButton,
   ListItemIcon,
   ListItemText,
-  Collapse,
+  Toolbar,
+  Typography,
 } from '@mui/material';
-import {
-  Dashboard as DashboardIcon,
-  ConfirmationNumber as TicketIcon,
-  SwapHoriz as ChangeIcon,
-  Book as KnowledgeIcon,
-  Engineering as SolutionIcon,
-  People as UserIcon,
-  Settings as SettingsIcon,
-  ExpandLess,
-  ExpandMore,
-} from '@mui/icons-material';
 import { useState } from 'react';
+import { Link as RouterLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { hasPermission } from '../../utils/permissions';
 
@@ -76,13 +75,14 @@ const Sidebar = ({ drawerWidth, mobileOpen, handleDrawerToggle, isMobile }) => {
       // All users can view knowledge base
       requiredPermission: 'view_knowledge'
     },
-    {
+    // Removing the Solutions menu item
+    /* {
       text: 'Solutions',
       icon: <SolutionIcon />,
       path: '/dashboard/solutions',
       // Only users with view_solutions permission can see this
       requiredPermission: 'view_solutions'
-    },
+    }, */
   ];
 
   // Filter menu items based on user permissions
